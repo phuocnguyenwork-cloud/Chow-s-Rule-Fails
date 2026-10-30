@@ -12,6 +12,8 @@ Scenarios
   "constant"   : m, f constant       -> escalation cost is linear in s, so a
                                         three-interval (two-threshold) policy
                                         is optimal in the population (Chow-like).
+  "perfect"    : tier 2 never errs -> escalation cost is exactly c_escalate, the
+                 textbook Chow case (thresholds 0.002 and 0.8 for 100/1/0.2).
   "blind_spot" : tier 2 is nearly blind to frauds in a window of z -> escalation
                  cost is non-convex and the optimal policy can be fragmented.
 """
@@ -41,7 +43,10 @@ class SyntheticConfig:
 
 def tier2_rates(z, cfg):
     z = np.asarray(z, float)
-    if cfg.scenario == "constant":
+    if cfg.scenario == "perfect":
+        m = np.zeros_like(z)
+        f = np.zeros_like(z)
+    elif cfg.scenario == "constant":
         m = np.full_like(z, 0.10)
         f = np.full_like(z, cfg.base_false_block)
     elif cfg.scenario == "blind_spot":
@@ -66,3 +71,39 @@ def generate(cfg=None, seed=0):
     tier2_block = np.where(y == 1, u >= m, u < f).astype(int)
     return {"z": z, "s_true": s_true, "p_raw": p_raw, "y": y,
             "tier2_block": tier2_block}
+
+
+def analytic_costs(cfg=None, c_miss=100.0, c_false_block=1.0, c_escalate=0.2):
+    """Population costs by numerical integration over z (no sampling noise).
+
+    Returns dict with
+      C_star : cost of the pointwise-optimal policy (best action at every score)
+      C_two  : cost of the best two-threshold policy for the REAL cost
+      C_roc  : cost of the ROC-optimal two-threshold design (class-average costs a+, a-)
+      plus a_plus, a_minus and the ROC thresholds.
+    Valid because the clean score s = sigmoid(z) is calibrated by construction.
+    """
+    cfg = cfg or SyntheticConfig()
+    z = np.linspace(-16, 12, 400_001)
+    dz = z[1] - z[0]
+    w = np.exp(-((z - cfg.mu) ** 2) / (2 * cfg.sd ** 2)) / (cfg.sd * np.sqrt(2 * np.pi)) * dz
+    s = _sigmoid(z)
+    m, f = tier2_rates(z, cfg)
+    c_pass = c_miss * s
+    c_block = c_false_block * (1 - s)
+    c_esc = c_escalate + c_miss * s * m + c_false_block * (1 - s) * f
+    C_star = float((w * np.minimum(np.minimum(c_pass, c_esc), c_block)).sum())
+    cp = np.concatenate([[0], np.cumsum(w * c_pass)])
+    ce = np.concatenate([[0], np.cumsum(w * c_esc)])
+    cb = np.concatenate([[0], np.cumsum(w * c_block)])
+    C_two = float((np.minimum.accumulate(cp - ce) + (ce - cb) + cb[-1]).min())
+    miss = float((w * s * m).sum() / (w * s).sum())
+    fblk = float((w * (1 - s) * f).sum() / (w * (1 - s)).sum())
+    a_plus = c_escalate + c_miss * miss
+    a_minus = c_escalate + c_false_block * fblk
+    t_low = a_minus / (c_miss - a_plus + a_minus)
+    t_high = (c_false_block - a_minus) / (c_false_block - a_minus + a_plus)
+    kL, kH = np.searchsorted(s, t_low), np.searchsorted(s, t_high)
+    C_roc = float(cp[kL] + (ce[kH] - ce[kL]) + (cb[-1] - cb[kH]))
+    return {"C_star": C_star, "C_two": C_two, "C_roc": C_roc, "a_plus": a_plus,
+            "a_minus": a_minus, "t_low_roc": float(t_low), "t_high_roc": float(t_high)}

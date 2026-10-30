@@ -60,6 +60,7 @@ def main():
     for scenario, seed_list in seeds.items():
         print(f"\n=== scenario: {scenario} ===")
         rels, abss, shapes = [], [], []
+        roc_rel_vs_exact = []
         for seed in seed_list:
             r = one_split(scenario, seed)
             rg = r["test_regret"]
@@ -71,6 +72,16 @@ def main():
                   f"  regret={rg['abs']:+.4f} ({100*rg['rel']:+.1f}%)"
                   f" CI95 rel [{100*rg['rel_ci'][0]:+.1f}%, {100*rg['rel_ci'][1]:+.1f}%]"
                   f"  ECE raw->cal {r['ece_raw']:.4f}->{r['ece_cal']:.4f}")
+            o, ex = r["roc"], r["exact_two_threshold"]
+            roc_rel_vs_exact.append(o["test_cost"] / ex["test_cost"] - 1.0)
+            print(f"          ROC baseline: a+={o['a_plus']:.2f} a-={o['a_minus']:.3f} "
+                  f"t=({o['t_low']:.5f}, {o['t_high']:.4f}) | test cost roc={o['test_cost']:.4f} "
+                  f"exact-two-thr={ex['test_cost']:.4f}  roc vs per-bin "
+                  f"{100*o['regret_vs_per_bin']['rel']:+.1f}%")
+            checks.append((f"{scenario}/seed{seed}: ROC val cost >= exact two-threshold optimum",
+                           o["val_cost"] >= ex["val_cost"] - 1e-12))
+            checks.append((f"{scenario}/seed{seed}: snapped ROC val cost >= best two-threshold on bins",
+                           o["snapped_val_cost"] >= r["val_cost_two"] - 1e-12))
             # invariants that must hold for ANY data
             checks.append((f"{scenario}/seed{seed}: val cost per-bin <= two-threshold",
                            r["val_cost_bin"] <= r["val_cost_two"] + 1e-12))
@@ -82,7 +93,10 @@ def main():
         summary[scenario] = {"mean_rel_regret": float(np.mean(rels)),
                              "mean_abs_regret": float(np.mean(abss)),
                              "per_bin_not_two_threshold_shape": int(sum(not s for s in shapes)),
+                             "mean_roc_extra_cost_vs_exact_two_threshold": float(np.mean(roc_rel_vs_exact)),
                              "n_seeds": len(seed_list)}
+        print(f" -> ROC test cost vs exact best two-threshold: {100*np.mean(roc_rel_vs_exact):+.1f}% "
+              f"(mean over seeds)")
         print(f" -> mean relative regret {100*np.mean(rels):+.2f}%  "
               f"(per-bin policy left the two-threshold shape in "
               f"{sum(not s for s in shapes)}/{len(shapes)} seeds)")
@@ -95,6 +109,11 @@ def main():
     checks.append(("blind_spot: per-bin policy is fragmented in every seed",
                    summary["blind_spot"]["per_bin_not_two_threshold_shape"]
                    == summary["blind_spot"]["n_seeds"]))
+
+    checks.append(("constant: ROC within 3% of exact two-threshold (constant-cost model is right)",
+                   abs(summary["constant"]["mean_roc_extra_cost_vs_exact_two_threshold"]) < 0.03))
+    checks.append(("blind_spot: ROC costs > 10% more than exact two-threshold (constant-cost model is wrong)",
+                   summary["blind_spot"]["mean_roc_extra_cost_vs_exact_two_threshold"] > 0.10))
 
     print("\n=== checks ===")
     ok = True
