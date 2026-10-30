@@ -2,20 +2,18 @@
 
 **Chow's Rule Fails When the Abstention Is a Classifier: Exact Conditions for Interval-Optimality of Three-Action Risk Policies, and the Regret of Two-Threshold Designs**
 
-Đồ án tổng hợp CO3101 · Trường ĐH Bách Khoa, ĐHQG-HCM · Khoa KH&KT Máy tính
-Nhóm: `[tên nhóm]` · `[Họ tên – MSSV]` · GVHD: `[tên]`
 
 ## Câu hỏi nghiên cứu
 
 Trên Credit Card Fraud (tầng 1 hồi quy logistic đã hiệu chuẩn, tầng 2 gradient boosting, chi phí bỏ sót / chặn nhầm / leo thang = 100 / 1 / 0,2), chi phí kiểm thử trên mỗi giao dịch của **chính sách hai ngưỡng tốt nhất** cao hơn **chính sách ba hành động tối ưu theo từng khoảng điểm** bao nhiêu phần trăm, trung bình qua 20 lần chia dữ liệu (kèm khoảng tin cậy 95%)?
 
-## Chạy nhanh (smoke test, không cần mạng, ~10 giây)
+## Chạy nhanh (smoke test)
 
 ```bash
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 make smoke            # hoặc: python scripts/smoke_test.py
-make test             # 23 unit test (~20 giây)
+make test             # 23 unit test
 ```
 
 Kết quả mong đợi: dòng cuối là `SMOKE TEST PASSED`, mã thoát 0, và file `outputs/smoke_results.json`.
@@ -33,8 +31,6 @@ Ngoài ra `perfect` (tầng 2 không sai, đúng trường hợp Chow: ngưỡng
 
 ## Chạy trên dữ liệu thật
 
-Dữ liệu **không** được commit (xem `.gitignore`). Tải Credit Card Fraud Detection (OpenML id 1597, hoặc bản Kaggle) và kiểm tra giấy phép trước khi dùng.
-
 ```bash
 python scripts/run_creditcard.py --csv data/creditcard.csv --n-splits 20 --K 10 --method logit
 # hoặc: python scripts/run_creditcard.py --openml --n-splits 1
@@ -47,7 +43,7 @@ Kiểm tra sau khi tải: 284.807 dòng, 492 gian lận. Mặc định script lo
 - **Ba hành động:** cho qua / leo thang / chặn. Chi phí: bỏ sót gian lận 100, chặn nhầm 1, leo thang 0,2 cộng lỗi của tầng 2 (`src/threeaction/costs.py`).
 - **Tầng 1** cho điểm thô, **hiệu chuẩn Platt** học trên tập kiểm định thành điểm `s`. **Tầng 2** cho quyết định cuối với ngưỡng `t2` cố định một lần từ dự đoán ngoài mẫu trên train.
 - **Chia khoảng:** biên khoảng tính từ **train**, dùng nguyên cho val/test (`bins.py`: `quantile`, `logit`, `fraud_quantile`, kèm gộp khoảng để mỗi khoảng đủ gian lận).
-- **Baseline ROC-optimal** (`roc_baseline.py`, Pietraszek, ICML 2005): giả định chi phí leo thang là hằng số theo lớp (a⁺ cho gian lận, a⁻ cho giao dịch hợp lệ, ước lượng từ **train**), đường ROC lấy từ **val**. Đại diện cho thiết kế hai ngưỡng truyền thống. Khác quét lưới ở chỗ nó tối ưu một *mô hình* chi phí (hằng số), còn quét lưới (`exact_two_threshold`, O(n)) tối ưu chi phí thật. Hai cách trùng nhau khi chi phí leo thang đúng là hằng số.
+- **Baseline ROC-optimal** (`roc_baseline.py`): giả định chi phí leo thang là hằng số theo lớp (a⁺ cho gian lận, a⁻ cho giao dịch hợp lệ, ước lượng từ **train**), đường ROC lấy từ **val**. Đại diện cho thiết kế hai ngưỡng truyền thống. Khác quét lưới ở chỗ nó tối ưu một *mô hình* chi phí (hằng số), còn quét lưới (`exact_two_threshold`, O(n)) tối ưu chi phí thật. Hai cách trùng nhau khi chi phí leo thang đúng là hằng số.
 - **Hai chính sách chọn từ cùng một bảng chi phí trên val** (`policies.py`): theo khoảng (mỗi khoảng chọn hành động rẻ nhất) và hai ngưỡng (cho qua → leo thang → chặn liền nhau, ngưỡng đặt trên biên khoảng nên là tập con của chính sách theo khoảng).
 - **Đánh giá chỉ trên test:** chi phí trung bình mỗi giao dịch, regret tuyệt đối và tương đối, khoảng tin cậy bootstrap theo cặp.
 
@@ -68,19 +64,10 @@ tests/             test_core.py, test_roc.py (23 test; unittest, chạy được
 data/  outputs/    dữ liệu thô và kết quả (không commit)
 ```
 
-## Kế hoạch
-
-- [ ] W4 hình thức hóa mô hình · [ ] W5 điều kiện lồi + phản ví dụ · [ ] W6 cận trên regret
-- [x] W7 simulator tổng hợp + kiểm thử 1, 2 (khung đã có, cần đối chiếu với cận lý thuyết)
-- [ ] W8 dữ liệu thật + kiểm tra sớm có đứt đoạn · [ ] W9 baseline · [ ] W10 chạy 20 lần chia
-- [ ] W11 so cận với regret thực · [ ] W12 quét chi phí, độ nhạy K · [ ] W13–14 báo cáo, slide
 
 ## Tài liệu tham khảo
 
-- Dal Pozzolo et al., Credit Card Fraud Detection dataset `[kiểm tra trích dẫn đầy đủ]`
-- Narasimhan et al., NeurIPS 2022 `[kiểm tra trích dẫn đầy đủ]`
-- Chow, C. K. (1970), *On optimum recognition error and reject tradeoff* `[kiểm tra]`
+- Dal Pozzolo et al., Credit Card Fraud Detection dataset
+- Narasimhan et al., NeurIPS 2022 
+- Chow, C. K. (1970), *On optimum recognition error and reject tradeoff* 
 
-## Giấy phép
-
-`[chọn giấy phép cho mã nguồn, ví dụ MIT]`. Dữ liệu tuân theo giấy phép của nguồn gốc.
