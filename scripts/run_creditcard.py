@@ -110,7 +110,17 @@ def main():
         print(f"split {seed:2d}: K_eff={r['K_effective']:2d} t2={r['t2']:.4f} "
               f"test cost two={r['test_cost_two']:.5f} bin={r['test_cost_bin']:.5f} "
               f"regret={rg['abs']:+.5f} ({100 * rg['rel']:+.2f}%) ECE={r['ece_test']:.5f}")
-        rows.append({"seed": seed, "K_eff": r["K_effective"], "t2": r["t2"],
+        o, ex = r["roc"], r["exact_two_threshold"]
+        print(f"          ROC: a+={o['a_plus']:.2f} a-={o['a_minus']:.3f} t=({o['t_low']:.5f},"
+              f" {o['t_high']:.4f}) test cost={o['test_cost']:.5f} "
+              f"| exact two-thr test cost={ex['test_cost']:.5f}")
+        rows.append({"roc_a_plus": o["a_plus"], "roc_a_minus": o["a_minus"],
+                     "roc_t_low": o["t_low"], "roc_t_high": o["t_high"],
+                     "roc_test_cost": o["test_cost"],
+                     "roc_snapped_test_cost": o["snapped_test_cost"],
+                     "roc_regret_vs_per_bin_rel": o["regret_vs_per_bin"]["rel"],
+                     "exact_two_threshold_test_cost": ex["test_cost"],
+                     "seed": seed, "K_eff": r["K_effective"], "t2": r["t2"],
                      "t_low": r["t_low"], "t_high": r["t_high"],
                      "test_cost_two": r["test_cost_two"], "test_cost_bin": r["test_cost_bin"],
                      "regret_abs": rg["abs"], "regret_rel": rg["rel"],
@@ -118,7 +128,10 @@ def main():
                      "per_bin_two_threshold_shape": r["per_bin_is_two_threshold_shape"],
                      "ece_test": r["ece_test"]})
     ct = np.mean([r["test_cost_two"] for r in rows]); cb = np.mean([r["test_cost_bin"] for r in rows])
-    agg = {"mean_cost_two": ct, "mean_cost_bin": cb, "mean_abs_regret": ct - cb,
+    cr = np.mean([r["roc_test_cost"] for r in rows])
+    agg = {"mean_cost_roc": cr,
+           "mean_rel_regret_roc": (cr - cb) / cb if cb > 0 else None,
+           "mean_cost_two": ct, "mean_cost_bin": cb, "mean_abs_regret": ct - cb,
            "mean_rel_regret": (ct - cb) / cb if cb > 0 else None,
            "std_abs_regret_across_splits": float(np.std([r["regret_abs"] for r in rows]))}
     print("\nAGGREGATE over", a.n_splits, "split(s):", json.dumps(agg, indent=2))

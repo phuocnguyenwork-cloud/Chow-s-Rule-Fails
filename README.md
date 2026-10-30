@@ -15,7 +15,7 @@ Trên Credit Card Fraud (tầng 1 hồi quy logistic đã hiệu chuẩn, tầng
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 make smoke            # hoặc: python scripts/smoke_test.py
-make test             # unit test
+make test             # 23 unit test (~20 giây)
 ```
 
 Kết quả mong đợi: dòng cuối là `SMOKE TEST PASSED`, mã thoát 0, và file `outputs/smoke_results.json`.
@@ -25,7 +25,9 @@ Smoke test chạy toàn bộ chuỗi *sinh dữ liệu → chia 60/20/20 → hi�
 | Kịch bản | Sai số tầng 2 | Điều phải thấy |
 |---|---|---|
 | `constant` | không đổi theo điểm | regret xấp xỉ 0, chính sách theo khoảng có dạng hai ngưỡng |
-| `blind_spot` | tầng 2 "mù" trong một cửa sổ điểm | chính sách tối ưu bị đứt (leo thang → chặn → leo thang → chặn), regret > 0 |
+| `blind_spot` | tầng 2 "mù" trong một cửa sổ điểm | chính sách tối ưu bị đứt (leo thang → chặn → leo thang → chặn), regret > 0, ROC tốn hơn quét lưới rõ rệt |
+
+Ngoài ra `perfect` (tầng 2 không sai, đúng trường hợp Chow: ngưỡng 0,002 và 0,8) dùng trong unit test. `synthetic.analytic_costs` tính đáp án giải tích bằng tích phân: ở `blind_spot`, hai ngưỡng tốt nhất tốn hơn chính sách tối ưu 9,07% và ROC tốn hơn 62,79%.
 
 > Smoke test chỉ chứng minh **code nối đúng**, không phải kết quả khoa học. Dữ liệu tổng hợp do chúng tôi thiết kế để hiện tượng xuất hiện.
 
@@ -45,6 +47,7 @@ Kiểm tra sau khi tải: 284.807 dòng, 492 gian lận. Mặc định script lo
 - **Ba hành động:** cho qua / leo thang / chặn. Chi phí: bỏ sót gian lận 100, chặn nhầm 1, leo thang 0,2 cộng lỗi của tầng 2 (`src/threeaction/costs.py`).
 - **Tầng 1** cho điểm thô, **hiệu chuẩn Platt** học trên tập kiểm định thành điểm `s`. **Tầng 2** cho quyết định cuối với ngưỡng `t2` cố định một lần từ dự đoán ngoài mẫu trên train.
 - **Chia khoảng:** biên khoảng tính từ **train**, dùng nguyên cho val/test (`bins.py`: `quantile`, `logit`, `fraud_quantile`, kèm gộp khoảng để mỗi khoảng đủ gian lận).
+- **Baseline ROC-optimal** (`roc_baseline.py`, Pietraszek, ICML 2005): giả định chi phí leo thang là hằng số theo lớp (a⁺ cho gian lận, a⁻ cho giao dịch hợp lệ, ước lượng từ **train**), đường ROC lấy từ **val**. Đại diện cho thiết kế hai ngưỡng truyền thống. Khác quét lưới ở chỗ nó tối ưu một *mô hình* chi phí (hằng số), còn quét lưới (`exact_two_threshold`, O(n)) tối ưu chi phí thật. Hai cách trùng nhau khi chi phí leo thang đúng là hằng số.
 - **Hai chính sách chọn từ cùng một bảng chi phí trên val** (`policies.py`): theo khoảng (mỗi khoảng chọn hành động rẻ nhất) và hai ngưỡng (cho qua → leo thang → chặn liền nhau, ngưỡng đặt trên biên khoảng nên là tập con của chính sách theo khoảng).
 - **Đánh giá chỉ trên test:** chi phí trung bình mỗi giao dịch, regret tuyệt đối và tương đối, khoảng tin cậy bootstrap theo cặp.
 
@@ -59,9 +62,9 @@ Kiểm tra sau khi tải: 284.807 dòng, 492 gian lận. Mặc định script lo
 ## Cấu trúc thư mục
 
 ```
-src/threeaction/   costs, bins, calibrate, tier2, policies, pipeline, synthetic
+src/threeaction/   costs, bins, calibrate, tier2, policies, roc_baseline, pipeline, synthetic
 scripts/           smoke_test.py (không cần mạng), run_creditcard.py (dữ liệu thật)
-tests/             unit test (unittest, chạy được với pytest)
+tests/             test_core.py, test_roc.py (23 test; unittest, chạy được với pytest)
 data/  outputs/    dữ liệu thô và kết quả (không commit)
 ```
 
