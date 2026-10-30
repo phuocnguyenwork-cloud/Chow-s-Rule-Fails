@@ -30,7 +30,13 @@ Ngoài ra `perfect` (tầng 2 không sai, đúng trường hợp Chow: ngưỡng
 > Smoke test chỉ chứng minh **code nối đúng**, không phải kết quả khoa học. Dữ liệu tổng hợp do chúng tôi thiết kế để hiện tượng xuất hiện.
 
 ## Chạy trên dữ liệu thật
-
+Tải dữ liệu Credit Card Fraud Detection OpenML ID 1597
+```bash
+python -c "from sklearn.datasets import fetch_openml;
+df = fetch_openml(data_id=1597, as_frame=True).frame;
+df.to_csv('data/creditcard.csv', index=False);
+```
+Chạy
 ```bash
 python scripts/run_creditcard.py --csv data/creditcard.csv --n-splits 20 --K 10 --method logit
 # hoặc: python scripts/run_creditcard.py --openml --n-splits 1
@@ -47,8 +53,7 @@ Kiểm tra sau khi tải: 284.807 dòng, 492 gian lận. Mặc định script lo
 - **Hai chính sách chọn từ cùng một bảng chi phí trên val** (`policies.py`): theo khoảng (mỗi khoảng chọn hành động rẻ nhất) và hai ngưỡng (cho qua → leo thang → chặn liền nhau, ngưỡng đặt trên biên khoảng nên là tập con của chính sách theo khoảng).
 - **Đánh giá chỉ trên test:** chi phí trung bình mỗi giao dịch, regret tuyệt đối và tương đối, khoảng tin cậy bootstrap theo cặp.
 
-## Giả định và hạn chế (ghi trước để không bị hiểu nhầm)
-
+## Giả định và hạn chế
 - Regret đo ở đây là so với chính sách tối ưu trong lớp "hàm của điểm tầng 1 chia K khoảng", ước lượng từ dữ liệu. **Không phải regret Bayes thật.**
 - Tập kiểm định chỉ có khoảng 98 gian lận: chính sách theo khoảng có thể khớp nhiễu (đã quan sát trong smoke test, kịch bản `constant`, seed 3). Vì vậy K nhỏ, có gộp khoảng, và báo cáo kèm khoảng tin cậy; regret âm hoặc gần 0 là kết quả hợp lệ.
 - Chia ngẫu nhiên, không xét trôi dữ liệu theo thời gian. 20 lần chia dùng chung dữ liệu nên không độc lập.
