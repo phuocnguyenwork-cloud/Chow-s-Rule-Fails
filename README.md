@@ -37,10 +37,39 @@ Dữ liệu **không** được commit (xem `.gitignore`). Tải Credit Card Fra
 
 ```bash
 python scripts/run_creditcard.py --csv data/creditcard.csv --n-splits 20 --K 10 --method logit
-# hoặc: python scripts/run_creditcard.py --openml --n-splits 1
+# hoặc: python scripts/run_creditcard.py --openml --n-splits 20
 ```
 
+Lệnh trên ghi `outputs/creditcard_results.json` và hình
+`outputs/creditcard_results.png` (chi phí test của bốn chính sách qua từng lần
+chia dữ liệu, cùng regret tương đối và khoảng tin cậy 95% theo bootstrap ghép
+cặp trong từng tập test). Có thể vẽ lại từ JSON bằng
+`python scripts/plot_creditcard.py outputs/creditcard_results.json`.
+Các lần chia dùng lại nhiều giao dịch, vì vậy khoảng tin cậy của từng lần chia
+không phải khoảng tin cậy cho trung bình qua 20 lần chia.
+
+Chạy kiểm tra trên OpenML 1597 (loại trùng, 275.663 giao dịch / 473 gian lận,
+20 lần chia, seed 0–19, chi phí 100/1/0,2, mặc định `min_pos=5`):
+
+| Cách chia khoảng | K thực tế | Chi phí hai ngưỡng theo khoảng | Chi phí theo khoảng | Chênh lệch tương đối |
+|---|---:|---:|---:|---:|
+| `logit` (mặc định) | 3–5 | 0,06014 | 0,06014 | 0,00% |
+| `fraud_quantile` | 10 | 0,03753 | 0,03825 | −1,89% |
+
+`fraud_quantile` chạy với lệnh sau:
+
+```bash
+python scripts/run_creditcard.py --openml --n-splits 20 --method fraud_quantile --out outputs/creditcard_fraud_quantile.json
+```
+
+Chênh lệch âm trên test cho thấy
+chính sách theo khoảng có thể khớp nhiễu validation; đây chưa phải bằng chứng
+rằng hai ngưỡng tối ưu trong tổng thể. Các kết quả phụ thuộc cách chia khoảng,
+tập đặc trưng tầng 1 tạm thời và giả định chi phí.
+
 Kiểm tra sau khi tải: 284.807 dòng, 492 gian lận. Mặc định script loại các dòng trùng lặp và in số dòng trước/sau.
+Bản OpenML 1597 không có cột `Time`; script dùng các đặc trưng còn lại và in
+số đặc trưng được dùng. CSV Kaggle có `Time` thì dùng thêm cột này.
 
 ## Phương pháp tóm tắt
 

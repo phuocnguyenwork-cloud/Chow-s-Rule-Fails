@@ -31,8 +31,9 @@ sys.path.insert(0, os.path.join(ROOT, "src"))
 from threeaction.calibrate import PlattCalibrator, ece, reliability_table   # noqa: E402
 from threeaction.pipeline import run_policies                                # noqa: E402
 from threeaction.tier2 import choose_t2                                      # noqa: E402
+from plot_creditcard import plot_results                                       # noqa: E402
 
-ALL_FEATURES = ["Time", "Amount"] + [f"V{i}" for i in range(1, 29)]
+REQUIRED_FEATURES = ["Amount"] + [f"V{i}" for i in range(1, 29)]
 TIER1_FEATURES = ["Time", "Amount"] + [f"V{i}" for i in range(1, 11)]  # placeholder
 
 
@@ -41,21 +42,25 @@ def load(csv=None, openml=False, dedupe=True):
         df = pd.read_csv(csv)
     elif openml:
         from sklearn.datasets import fetch_openml
-        df = fetch_openml(data_id=1597, as_frame=True).frame
+        df = fetch_openml(data_id=1597, as_frame=True,
+                          data_home=os.path.join(ROOT, "data", "openml")).frame
     else:
         raise SystemExit("give --csv PATH or --openml")
     df = df.rename(columns={c: c.strip() for c in df.columns})
     label = "Class" if "Class" in df.columns else df.columns[-1]
     df[label] = df[label].astype(int)
-    missing = [c for c in ALL_FEATURES if c not in df.columns]
+    missing = [c for c in REQUIRED_FEATURES if c not in df.columns]
     if missing:
         raise SystemExit(f"missing columns: {missing}")
+    # OpenML 1597 omits Time; the common Kaggle CSV contains it.
+    all_features = (["Time"] if "Time" in df.columns else []) + REQUIRED_FEATURES
     n0 = len(df)
     if dedupe:
-        df = df.drop_duplicates(subset=ALL_FEATURES + [label]).reset_index(drop=True)
+        df = df.drop_duplicates(subset=all_features + [label]).reset_index(drop=True)
     print(f"rows: {n0} -> {len(df)} after dedupe={dedupe}; frauds: {int(df[label].sum())} "
           f"({100 * df[label].mean():.3f}%)")
-    return df[ALL_FEATURES].reset_index(drop=True), df[label].to_numpy()
+    print(f"features: {len(all_features)} total; Time present: {'Time' in all_features}")
+    return df[all_features].reset_index(drop=True), df[label].to_numpy()
 
 
 def one_split(X, y, seed, K, method, min_pos, n_boot):
@@ -65,19 +70,20 @@ def one_split(X, y, seed, K, method, min_pos, n_boot):
 
     # tier 1 + Platt (learned on VAL only)
     lr = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
-    lr.fit(X.iloc[tr][TIER1_FEATURES], y[tr])
-    p_raw = lr.predict_proba(X[TIER1_FEATURES])[:, 1]
+    tier1_features = [c for c in TIER1_FEATURES if c in X.columns]
+    lr.fit(X.iloc[tr][tier1_features], y[tr])
+    p_raw = lr.predict_proba(X[tier1_features])[:, 1]
     cal = PlattCalibrator().fit(p_raw[va], y[va])
     s = cal.transform(p_raw)
 
     # tier 2 and its fixed threshold t2 (out-of-fold on TRAIN)
     gb = HistGradientBoostingClassifier(random_state=seed)
-    p2_oof = cross_val_predict(gb, X.iloc[tr][ALL_FEATURES], y[tr],
+    p2_oof = cross_val_predict(gb, X.iloc[tr], y[tr],
                                cv=StratifiedKFold(5, shuffle=True, random_state=seed),
                                method="predict_proba")[:, 1]
     t2, _ = choose_t2(p2_oof, y[tr])
-    gb.fit(X.iloc[tr][ALL_FEATURES], y[tr])
-    p2 = gb.predict_proba(X[ALL_FEATURES])[:, 1]
+    gb.fit(X.iloc[tr], y[tr])
+    p2 = gb.predict_proba(X)[:, 1]
     block2 = (p2 >= t2).astype(int)
     block2[tr] = (p2_oof >= t2).astype(int)       # train rows use out-of-fold decisions
 
@@ -137,8 +143,12 @@ def main():
     print("\nAGGREGATE over", a.n_splits, "split(s):", json.dumps(agg, indent=2))
     print(f"elapsed {time.time() - t0:.1f}s")
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
+    result = {"args": vars(a), "splits": rows, "aggregate": agg}
     with open(a.out, "w") as f:
-        json.dump({"args": vars(a), "splits": rows, "aggregate": agg}, f, indent=2)
+        json.dump(result, f, indent=2)
+    figure = os.path.splitext(a.out)[0] + ".png"
+    plot_results(result, figure)
+    print(f"saved results: {a.out}\nsaved figure: {figure}")
 
 
 if __name__ == "__main__":
