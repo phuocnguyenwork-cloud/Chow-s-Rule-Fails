@@ -6,7 +6,7 @@ install:
 	$(PYTHON) -m pip install -r requirements.txt
 
 test:
-	$(PYTHON) -m unittest discover -s tests -v
+	$(PYTHON) -m pytest tests/ -v
 
 smoke:
 	$(PYTHON) scripts/smoke_test.py

@@ -1,0 +1,530 @@
+{
+  "metadata": {
+    "dataset_name": "Credit Card Fraud Detection (ULB / Machine Learning Group)",
+    "openml_data_id": 1597,
+    "version": "1.0-frozen-week3",
+    "date_frozen": "2026-11-03 21:42:47",
+    "author": "Nguyen Huu Phuoc (Nhom 01 - CO3101)",
+    "preprocessing_version": "dedupe_v1_stratified_60_20_20"
+  },
+  "environment": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "python_version": "3.13.9",
+    "numpy_version": "2.5.4",
+    "pandas_version": "3.1.0"
+  },
+  "raw_file": {
+    "path": "data\\creditcard.csv",
+    "size_bytes": 148854550,
+    "sha256": "2f2ca793ed45d753b75896d72dd6c187c8520ea0127c438106d55f0238da47a8",
+    "rows": 284807,
+    "columns": 30,
+    "frauds": 492,
+    "legitimate": 284315,
+    "exact_duplicate_rows": 9144,
+    "conflicting_groups": 0
+  },
+  "processed_file": {
+    "path": "data\\creditcard_clean.csv",
+    "sha256": "4645d223ee0af9afb94cef3f008aa107ba489ff476af492185ce18bb8651ca07",
+    "rows": 275663,
+    "columns": 30,
+    "frauds": 473,
+    "legitimate": 275190,
+    "rows_removed_or_merged": 9144,
+    "policy_for_duplicates": "Group-level deduplication: drop identical feature-label duplicates, preserving true positive class ratio."
+  },
+  "splits_archive": {
+    "path": "data\\splits_20.npz",
+    "sha256": "78811ec06059270780b8469b9d54f3f046653b24b92407887b6a27592c79cde7",
+    "n_splits": 20,
+    "ratios": {
+      "train": 0.6,
+      "val": 0.2,
+      "test": 0.2
+    },
+    "stratified": true
+  },
+  "splits": [
+    {
+      "seed": 0,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "5366173af2adcd25e0fb6520211e063d83989b04e0b4aa9a4e78a2ddc4670701"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "b438c07dcf58d5afdd6ca2b943a259e76923a522af5bdb76d6ef11e139ef2229"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "fb42620b539b81d2c66cb42b38882b0d09a99384bba12c8339445b1a95b6f9a3"
+      }
+    },
+    {
+      "seed": 1,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "be7eab52fa555cea48d64262e3f86215845d9f1771bd4604ffe878389c511126"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "e79d8decb9a1e764b0eb45ff7d7bd80c268faeeb9c2f263d15f88630e3f0c069"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "5ab8b84527f064addc7755ae417e8d7faeeef40cdce86cf2aa2bbd9962bc2966"
+      }
+    },
+    {
+      "seed": 2,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "b70f0743a671ee41dcf35884b680010e09937f1d14c1050aa847a9cdb84508a0"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "d09384ffb4e68aa77c1c4d25e5c11140d291028f22f0d5a65c1b1764cc416ae1"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "b6493f84c0d7b6c6fd31579ceee8c94dfa340fded1459a5e76bb9ca930723a39"
+      }
+    },
+    {
+      "seed": 3,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "a817c6effa683117f2fe4ec133b181e27ffa9083fa97b25101c37738c970a0e3"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "81c575bf3cbdc6a1259a1e62cc48fbcadb4f93951274103b50282861ee8b49b6"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "1968147fbf5e22fe6563bbd14bc98105341369d959ee77c05273713a75a1b911"
+      }
+    },
+    {
+      "seed": 4,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "35d0bf44ec83e03e2f4d36d2223259e5956607b10a9746d491ab3d634e665175"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "c2c8e53db4b278b8bcaff8f4247a71ce3c88e77a3ddaef23b85fdd054dfb0d76"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "c97da1a5b25a2e04a0b01c1ab6ba0103aa28d3fefbc82a43595ca3884342f7c6"
+      }
+    },
+    {
+      "seed": 5,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "fdd31674e7e85127ea63577807d028e1c9bc528c2f13412350904df4d3c5432f"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "37bc5dc0de606404403fb8bde732616db75ca949c861423fd3ea936024c9c2a8"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "3f0224a963fb2d5f712e8e8986c524b19b4139333e817ad265cfca4d86a92b77"
+      }
+    },
+    {
+      "seed": 6,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "b61d1c9d5221c86020a8686348389efb6efdc4a272d8f1ce612608119fdfb0ce"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "eb8b7f89ce1b608ad1633f125c0749b9e547b375452ab6e745f61649c3d3d971"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "12b21e5baa42bed7734298508e6b94be35325a45206085e2573be40aa685b752"
+      }
+    },
+    {
+      "seed": 7,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "6e5a48550dc4d4d059653021ed65d728b871b8b6b17131545a3dd0002c7c0083"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "86bba10179237ca9ff521fbafb897318aa9d7d7792fcc97bd20344c3ff697ba7"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "5a10a0ae7295f0477d8e222d512d3af8ddf97f061e0e75a0d2e978067b4b5972"
+      }
+    },
+    {
+      "seed": 8,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "bcd4162061ed0ced6986f5370932c3f66f0361a0cdbf16eff8e1ce8d4208a201"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "1e5c160e36875d5928deff7cdd81aae5ae009f8c8b9f8d54b4634e6615456a78"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "761c0e26af93c37ccfcc6644c4e72c055f110fce0e5e036be0fe6a3ea8d5ad4d"
+      }
+    },
+    {
+      "seed": 9,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "cbfa33877fdfc675cfd0dbb9ae14274e2b43b8395bf0394417d9ab91567129bc"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "d6f21fc5297c86f05aa144df929ed4927aba9d76643ee06074ccc3245aa5f5e1"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "7913a5e270aaba6d028cdc219e38da3aceb4783477e57243f00091f0fa1bfc59"
+      }
+    },
+    {
+      "seed": 10,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "94389b9cbd88119ace599eaa76f4f49fae8e0718317d906cc04aaeaa38cc31ed"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "54e09d6e2f47334df5375deec8be9f1a0eb408f438d26ed6616e641589b71bb4"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "a1e6cd6127909357b7fa922e5afe8c83472f9b8dd105c11ca97674992b4d1e0c"
+      }
+    },
+    {
+      "seed": 11,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "cafb7b608ace8b39e82935ba33a872ca862343d0e37d09ad82badbd41d522a61"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "e1d95933c302265f40999a4cc644c94d784d82e0aa8c1c7f2a35d538a6b8dc32"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "6479f43fa5778e20a498d86e0adc42be0f8f6689fac10ea136fb9c442fa4ce06"
+      }
+    },
+    {
+      "seed": 12,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "bb97bbf313fc13f0141b96a5decc22e1b92dd7c348c476915e181e46543821df"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "8ecf35bae07c1a519a388626ceb1c58279fbe0dd861c76c813cc053217e0586c"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "c4565c159eb1341fdc6f8f7cd75e5fd1984352e9ec7a15e34d6ecc9533ba26ca"
+      }
+    },
+    {
+      "seed": 13,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "4ba442bdb8eafb21c45d7c230e9eae1e899258547b2ee6c4e37a46184a7f29b1"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "cab349ef59536a749c3cb4f70efebd3577559faad1b16391b3ce46c028564575"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "de541567c12b6dbc7b84ea1c0aa4f529183056cb3a2fcfd51b16305a1810922e"
+      }
+    },
+    {
+      "seed": 14,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "c7b09d36aff58da4172dbdd536628fa34de0c15c4dab2a8b7db03aa20235c36a"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "7cd7f2b11904d83361db7c3828184657765e7072ed0c1eebf9d2f448a0912ce3"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "ecf588fd0204b07ad3ae5f9ba996c45e847336e039eba06f9bdacead8428943a"
+      }
+    },
+    {
+      "seed": 15,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "d4c284292af77ebed34b47863d906a958b4a8c1ecb1b731739b352d7745fc7af"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "b5f07ffdeeca3b2b2d77740fa5e590df63f68ea66c8d92f7062925f9c8929289"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "81aa619aef0f8779d0249b5aa59539434bb8aa3a2fd5d1004af5ef5d46ab6a45"
+      }
+    },
+    {
+      "seed": 16,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "94bf83e3582a8cba9748bf4273d4b4bf04d3e7f2be4e5263515f669c5d05f1ae"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "9ccc8e13bf059f30dd6c0ca70466a6196964d7751c1e07545c59f125bf986fa3"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "51a19189f8a928684c35d30178bc7dfcbc19d3958b8fb5435db95622dc2f6083"
+      }
+    },
+    {
+      "seed": 17,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "1c390421a3d8e879ea45f4aefe58646f61d35c4a42bc00097bdae2e9a324bfd1"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "9896b2bcafee81e43e6c6bdae4acadf1755cc1d0b838c59545ae5a3d649452ff"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "d0d52f14c2bbf0e3022f4b50f4c2d9dbd14e53c335c5762e30b2dca49e2e4fb8"
+      }
+    },
+    {
+      "seed": 18,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "fd9a0bbd73f2fb01febe09fed71634027a90a410f92553f58632e492055d6360"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "c303bb307455eedf688e88c2c5dfe0fcc5aa56c7ee0e53b34abb8926feaaa5df"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "8eaf98c6b7a802a8d1e793feb13630e564d299788acdd6f63fac5e3808aa94ba"
+      }
+    },
+    {
+      "seed": 19,
+      "train": {
+        "n": 165397,
+        "frauds": 284,
+        "legit": 165113,
+        "fraud_rate": 0.0017170807209320605,
+        "hash_sha256": "5caa5a33aacadd1fa748925885c704718983dd1bf0ec9499cf69cba5da0ddba5"
+      },
+      "val": {
+        "n": 55133,
+        "frauds": 94,
+        "legit": 55039,
+        "fraud_rate": 0.0017049679865053598,
+        "hash_sha256": "91b54433c8a1000defcb523bcfe52c199d7d0506f56b4f2690dc253a7090f5ae"
+      },
+      "test": {
+        "n": 55133,
+        "frauds": 95,
+        "legit": 55038,
+        "fraud_rate": 0.0017231059438086083,
+        "hash_sha256": "bb096efd29a2b49797c3d9699048f63524add2b71b713dfdc76c5b6346bb7c35"
+      }
+    }
+  ]
+}

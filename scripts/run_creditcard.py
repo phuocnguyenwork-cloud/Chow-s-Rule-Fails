@@ -17,6 +17,13 @@ import os
 import sys
 import time
 
+if sys.stdout.encoding != "utf-8":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -32,8 +39,8 @@ from threeaction.calibrate import PlattCalibrator, ece, reliability_table   # no
 from threeaction.pipeline import run_policies                                # noqa: E402
 from threeaction.tier2 import choose_t2                                      # noqa: E402
 
-ALL_FEATURES = ["Time", "Amount"] + [f"V{i}" for i in range(1, 29)]
-TIER1_FEATURES = ["Time", "Amount"] + [f"V{i}" for i in range(1, 11)]  # placeholder
+ALL_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 29)]
+TIER1_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 11)]  # placeholder
 
 
 def load(csv=None, openml=False, dedupe=True):
@@ -58,10 +65,15 @@ def load(csv=None, openml=False, dedupe=True):
     return df[ALL_FEATURES].reset_index(drop=True), df[label].to_numpy()
 
 
-def one_split(X, y, seed, K, method, min_pos, n_boot):
-    idx = np.arange(len(y))
-    tr, rest = train_test_split(idx, test_size=0.4, stratify=y, random_state=seed)
-    va, te = train_test_split(rest, test_size=0.5, stratify=y[rest], random_state=seed)
+def one_split(X, y, seed, K, method, min_pos, n_boot, splits_archive=None):
+    if splits_archive is not None and f"train_{seed}" in splits_archive:
+        tr = splits_archive[f"train_{seed}"]
+        va = splits_archive[f"val_{seed}"]
+        te = splits_archive[f"test_{seed}"]
+    else:
+        idx = np.arange(len(y))
+        tr, rest = train_test_split(idx, test_size=0.4, stratify=y, random_state=seed)
+        va, te = train_test_split(rest, test_size=0.5, stratify=y[rest], random_state=seed)
 
     # tier 1 + Platt (learned on VAL only)
     lr = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
@@ -98,14 +110,21 @@ def main():
     ap.add_argument("--min-pos", type=int, default=5)
     ap.add_argument("--n-boot", type=int, default=500)
     ap.add_argument("--no-dedupe", action="store_true")
+    ap.add_argument("--splits", default=os.path.join(ROOT, "data", "splits_20.npz"),
+                    help="Path to frozen splits npz (optional)")
     ap.add_argument("--out", default=os.path.join(ROOT, "outputs", "creditcard_results.json"))
     a = ap.parse_args()
+
+    splits_archive = None
+    if a.splits and os.path.exists(a.splits):
+        splits_archive = np.load(a.splits)
+        print(f"Loaded frozen splits from {a.splits}")
 
     X, y = load(a.csv, a.openml, dedupe=not a.no_dedupe)
     rows = []
     t0 = time.time()
     for seed in range(a.n_splits):
-        r = one_split(X, y, seed, a.K, a.method, a.min_pos, a.n_boot)
+        r = one_split(X, y, seed, a.K, a.method, a.min_pos, a.n_boot, splits_archive=splits_archive)
         rg = r["test_regret"]
         print(f"split {seed:2d}: K_eff={r['K_effective']:2d} t2={r['t2']:.4f} "
               f"test cost two={r['test_cost_two']:.5f} bin={r['test_cost_bin']:.5f} "

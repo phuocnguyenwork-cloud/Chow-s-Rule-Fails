@@ -8,6 +8,8 @@ venv/
 # dữ liệu thô không đưa lên git (xem README)
 data/*
 !data/.gitkeep
+!data/manifest.json
+!data/splits_20.npz
 # kết quả sinh ra khi chạy
 outputs/*
 !outputs/.gitkeep
