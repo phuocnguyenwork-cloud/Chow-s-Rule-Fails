@@ -64,7 +64,7 @@ def evaluate_fixture_policies(m_per_bin):
     N = n.sum()
 
     oracle_action = per_bin_actions(table) # rẻ nhất trong từng bin 
-    r_s = table[np.arrange(len(W)), oracle_action].sum()/N
+    r_s = table[np.arange(len(W)), oracle_action].sum()/N
 
     two_actions, ij, two_cost = best_two_threshold(table)
     r_2t = two_cost/N
