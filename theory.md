@@ -4,8 +4,8 @@
 
 **Đề tài:** G5-1 — *Chow’s Rule Fails When the Abstention Is a Classifier: Exact Conditions for Interval-Optimality of Three-Action Risk Policies, and the Regret of Two-Threshold Designs.*  
 **Phạm vi bàn giao:** Phần lý thuyết và đặc tả kiểm chứng của An.  
-**Ngày tổng hợp:** 05/11/2026.  
-**Phiên bản mã dùng để đối chiếu:** `14bd0342a7d348ee0f23cdbcf806c82815bfbca6`.
+**Ngày cập nhật:** 12/11/2026.
+**Phiên bản mã dùng để đối chiếu:** working tree của nhánh `test_chow` dựa trên `aa4089e`; cần ghi SHA mới sau khi commit.
 
 > Báo cáo thống nhất các quy ước và suy luận đã chốt: score tăng theo rủi ro lớp 1; chi phí sai phân lớp được phép bất đối xứng; hành động ESCALATE chịu cả phí gọi và lỗi tầng 2; lớp hai ngưỡng cho phép vùng chuyển tầng rỗng. Nghiệm Chow được dẫn xuất từ ba đường rủi ro. Cận regret kết hợp là $0\le\Delta\le\min\{B,R_{A1}-R_S^*\}$ khi các giả thiết của cận B được thỏa mãn. Điều kiện cần và đủ tổng quát cho tầng 2 phụ thuộc score và việc đối chiếu bản chứng minh gốc của nhóm vẫn là phần còn mở.
 
@@ -620,17 +620,15 @@ Tên lớp test cận không dùng chữ T3 để tránh nhầm với phản ví
 
 T3 theo phân công là `tests/test_fragmented_regret.py`, kiểm phản ví dụ nhiều khoảng. Nó không phải test có chữ số 3 trong `test_roc.py` và không được thay thế bằng các test hỗ trợ cận ở trên.
 
-Checklist lý thuyết và kiểm chứng:
+Đối chiếu `tests/test_fragmented_regret.py` ngày 12/11/2026:
 
-- [ ] Fixture có ít nhất hai khúc ESC tách nhau bởi một vùng không ESC; ghi action sequence và biên các khúc.
-- [ ] Ghi rõ phân phối S, trọng số có tổng 1, không gian rời rạc hay liên tục.
-- [ ] Tính $R_S^*$ và $R_{2T}^*$ độc lập từ fixture, có đáp án cụ thể; không dùng output thuật toán đang kiểm làm expected.
-- [ ] Kiểm $\Delta>0$ và khớp đáp án trong sai số có giải thích.
-- [ ] Kiểm $\Delta\le B+\varepsilon$ khi giả thiết B được thỏa mãn; đồng thời kiểm cận A1 hoặc min hai cận.
-- [ ] Cho phép E rỗng trong họ ngưỡng; score trùng không bị tách; hòa được quy định hoặc đối chiếu qua risk tối ưu.
-- [ ] Nếu dùng tích phân số, tách sai số tích phân khỏi tolerance dấu phẩy động.
+- [x] Năm bin rời rạc có trọng số `W` tổng bằng 1. Oracle chọn P,E,B,E,B; hai khúc E ở bin 1 và 3 bị bin 2 ngăn cách.
+- [x] Đáp án tính tay nằm trong hằng `RS_HAND=0.18576`, `R2T_HAND=0.19149`; test so với output solver thay vì dùng solver làm expected. Do đó $\Delta=0.00573>0$.
+- [x] Cận A1: `R0_HAND=0.26450`, nên $\Delta\le R_{A1}-R_S^*=0.07874$.
+- [ ] Test hiện gọi `B_HAND=0.07874`, nhưng đó là cận A1. Cận B của mục 10 chưa được kiểm riêng; với surrogate `M_FLAT`, tính tay $B=0.1275$ và $R(\pi_0)-R_S^*=0.096985$.
+- [ ] Chưa có ca T3 riêng cho vùng E rỗng, score trùng và điểm hòa.
 
-Một phản ví dụ có regret dương chưa tự kiểm được cận B, tính độc lập oracle hoặc tính đúng của trọng số. Các mục này phải được nghiệm thu riêng. Trong phiên bản tài liệu nguồn được tổng hợp, file T3 của Thuỳ chưa có trong checkout nên chưa xác nhận đạt checklist.
+Fixture không dùng tích phân số. Các số trên là risk trên mỗi giao dịch; `EPS=1e-9` trong T3 dùng cho phép tính hữu hạn. Checklist ghi trạng thái rà mã và chạy pytest tại working tree; chưa thay cho CI trên commit nộp.
 
 ## 14. Sai số số học và tính nguyên vẹn dữ liệu
 
@@ -692,21 +690,19 @@ Các kiểm tra này bảo vệ phép đo risk có cùng đối tượng. Chúng
 | Nghiệm all-PASS làm truy cập phần tử sa[n] | Trả +∞ khi chỉ số ngưỡng dưới bằng n |
 | E quá đắt vẫn trả hai giao điểm đảo thứ tự | Kiểm điều kiện và trả $(t_0,t_0)$, đồng thời kiểm miền chi phí |
 
-Các sửa nguồn trên nằm trong commit `02da4c207f1e6dbb5f7edca6de3bc85f5779a637`, được giữ trong commit đối chiếu mới `14bd0342a7d348ee0f23cdbcf806c82815bfbca6`. Bảng này giải thích quan hệ lý thuyết–triển khai, không có nghĩa báo cáo hiện tại sửa thêm code.
+Các sửa nguồn trên đã được áp dụng vào working tree của nhánh `test_chow` ngày 12/11/2026. Hai SHA từng ghi ở đây không có trong checkout hiện tại nên đã bỏ; cần cập nhật SHA thật sau khi commit và gộp vào main.
 
 ### 15.2. Kết quả kiểm chứng đã ghi nhận
 
-Báo cáo nghiệm thu ngày 03/11/2026 ghi kết quả trên commit đối chiếu:
+Kiểm chứng ngày 12/11/2026 trên working tree của `test_chow`:
 
-| Kiểm tra | Kết quả lịch sử có log |
+| Kiểm tra | Kết quả |
 |---|---|
-| `python -m pip check` | Không có xung đột phụ thuộc được báo |
-| `python -m pytest tests/test_chow_constant.py -q` | 25 passed |
-| `python -m pytest tests/ -q` | 48 passed |
+| `python -m pytest -p no:cacheprovider tests/test_chow_constant.py -q` | 27 passed, 0 xfailed |
+| `python -m pytest -p no:cacheprovider tests/ -q` | 120 passed, 0 xfailed |
 
-Môi trường nghiệm thu là Linux/CPython 3.12, với phụ thuộc trực tiếp và bắc cầu được ghim phiên bản trong `requirements.txt`, `requirements-dev.txt`. Các lớp unittest cũ vẫn được pytest chạy; fixture tham số mới yêu cầu pytest.
-
-Lượt tổng hợp `theory.md` chỉ biên tập lý thuyết từ các nguồn đã đọc, không chạy lại test và không tạo kết quả thực nghiệm mới. Các kết quả trên không xác nhận T3 chưa có, chất lượng dữ liệu thực hoặc định lý tối ưu khoảng tổng quát.
+Các con số này xác nhận kiểm thử cục bộ sau khi sửa ba lỗi biên. Chúng chưa xác nhận chất lượng dữ liệu thật, CI trên main hoặc định lý tối ưu khoảng tổng quát. File `requirements.txt` hiện chứa pytest; bản tài liệu cũ nhắc `requirements-dev.txt` không tồn tại trong checkout này.
+Log cục bộ ở `outputs/test_chow_constant.log` và `outputs/test_all_an_week4.log` ghi HEAD, trạng thái working tree, phiên bản Python/pytest/NumPy, lệnh và exit code.
 
 ### 15.3. Đối chiếu chứng minh gốc của nhóm
 
@@ -727,7 +723,7 @@ Các hàng này hiện là nội dung chờ đối chiếu với bản gốc, kh
 
 ### 15.4. Các việc chưa hoàn tất trong phạm vi nguồn
 
-- Chưa rà fixture và đáp án T3 của Thuỳ vì chưa có file tương ứng.
+- Đã rà fixture T3; cận A1 có test, còn cận B và các ca biên bổ sung chưa được kiểm riêng như mục 13.
 - Chưa nhận bản chứng minh B của nhóm để hoàn tất rà soát bản gốc.
 - Chưa sửa các lỗi pipeline dữ liệu đã báo: Platt fit val và bỏ dòng trùng trong bản code đối chiếu; fixture cũ của `test_roc.py` cũng cần đồng bộ quy trình.
 - Chưa chạy đánh giá Credit Card thực trong phần việc đã bàn giao.
@@ -745,8 +741,8 @@ T1 kiểm công thức và các baseline bằng fixture hiệu chuẩn, oracle �
 
 ### 16.2. Nguồn nội bộ đã đọc để tổng hợp
 
-1. [test_spec.md — phiên bản 2](https://chatgpt.com/library?file_id=libfile_afadfb3517408191b5e0a88276770161&account_id=personal): quy ước, công thức, T1, checklist T3 và dữ liệu.
-2. [bound_B.md — phiên bản 1](https://chatgpt.com/library?file_id=libfile_a35c7ab20bec8191b63fc96dda8ecdd6&account_id=personal): cận B, liên hệ A1 và phần chờ đối chiếu.
-3. [validation_report.md — phiên bản 1](https://chatgpt.com/library?file_id=libfile_b145c45bbd3081919933a28f3cdebafb&account_id=personal): SHA, kết quả lịch sử và giới hạn nghiệm thu.
+1. `docs/test_spec.md`: quy ước, công thức, T1, checklist T3 và dữ liệu trên nhánh hiện tại.
+2. `tests/test_chow_constant.py`: fixture Chow, oracle độc lập và kiểm chứng cận A1/B.
+3. `tests/test_fragmented_regret.py`: phản ví dụ nhiều khoảng và cận A1 được rà trong mục 13.
 
 Báo cáo này tự chứa các định nghĩa, dẫn xuất, chứng minh và lý do lựa chọn. Các liên kết nguồn phục vụ truy vết phiên bản; không cần mở các nguồn để đọc phần lý thuyết chính.

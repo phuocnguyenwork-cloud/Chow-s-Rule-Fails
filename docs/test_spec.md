@@ -1,10 +1,9 @@
 # Đặc tả nghiệm Chow và kiểm thử T1
 
-**Phạm vi:** mã nguồn nhánh `modified-baseline`, gốc
-`a0dce4698c666edbb1165b1174dc1ea3b0d63055`.
-Commit sửa nguồn và bổ sung T1: `02da4c207f1e6dbb5f7edca6de3bc85f5779a637`.
-Trạng thái chạy phải đọc cùng `validation_report.md` và các log pytest trong
-thư mục `validation/` của bộ bàn giao. Tài liệu này không tự ghi pass.
+**Phạm vi:** nhánh `test_chow`, cập nhật ngày 12/11/2026. Ba lỗi biên của
+baseline đã được sửa trong working tree; cần ghi SHA của commit chứa thay đổi
+và chạy lại trên main sau khi gộp. Kết quả kiểm thử dưới đây chỉ áp dụng cho
+working tree được kiểm tra, không thay cho log CI trên commit nộp.
 
 ## 1. Score, hành động và ma trận chi phí
 
@@ -138,11 +137,11 @@ và phép liệt kê không gọi helper chọn action/cost trong source sản x
 | `test_expensive_escalation_has_empty_region` | Không tạo E giả khi E quá đắt |
 | `test_zero_cost_escalation` | Bao phủ c=0 và endpoint |
 | `test_all_empty_bin_regions_roundtrip` | Mọi i<=j trên K=3, thêm biên K=1; bắt quy đổi cut 0/K sai |
-| `test_exact_solver_all_pass_and_all_block` | Thực tế kiểm toàn PASS/E/B, bắt IndexError kL=n |
+| `test_exact_solver_all_pass` và `test_exact_solver_all_escalate_and_all_block` | Kiểm riêng cả ba nghiệm chỉ dùng một action, bắt IndexError kL=n |
 | `test_duplicate_scores_permutation_and_input_integrity` | Không tách score trùng, không phụ thuộc thứ tự, không sửa đầu vào |
 | `test_invalid_closed_form_parameters` | Chặn các ca âm, NaN, chi phí lỗi bằng 0 đã chọn |
 
-`TestBoundA1AndB` là test hỗ trợ cận trong `bound_B.md`, **không phải T3
+`TestBoundA1AndB` là test hỗ trợ cận trong `theory.md` mục 10, **không phải T3
 của Thuỳ**, không thay thế `test_fragmented_regret.py`.
 
 Dùng atol=rtol=1e-12 cho phép so số thực giải tích float64, chi phí cỡ vừa:
@@ -155,20 +154,21 @@ phân; phải phân tích riêng nếu đổi scale hoặc gần suy biến.
 
 ## Checklist rà soát T3 của Thuỳ
 
-File đúng theo phân công: `tests/test_fragmented_regret.py`. Chưa có trong
-checkout được rà; tất cả mục dưới là **chờ đối chiếu**, không ghi pass.
+File được rà: `tests/test_fragmented_regret.py` trên nhánh `test_chow`.
+Các dấu kiểm dưới đây là kết quả đọc mã và chạy pytest ngày 12/11/2026;
+chưa xác nhận bằng CI trên main.
 
-- [ ] Fixture có ít nhất hai khúc ESC tách nhau bằng vùng không ESC; ghi
-      action sequence và biên các khúc, không chỉ assert số action.
-- [ ] R_S* và R_2T* được suy/tính độc lập từ fixture; không lấy output thuật
-      toán đang kiểm làm expected. Có đáp án cụ thể và đơn vị risk.
-- [ ] Delta=R_2T*-R_S*>0 và khớp đáp án theo tolerance có giải thích.
-- [ ] Delta<=B+epsilon với B đúng giả thiết; đồng thời kiểm cận A1:
-      Delta<=R_A1-R_S*+epsilon. Có thể kiểm min hai cận.
-- [ ] Ghi rõ phân phối S, trọng số chuẩn hóa tổng 1, rời rạc hay liên tục;
-      nếu tích phân số, tách sai số tích phân khỏi tolerance float.
-- [ ] Ngưỡng oracle cho phép vùng E rỗng; score trùng không bị tách;
-      tie được xử lý nhất quán hoặc đối chiếu qua risk tối ưu.
+- [x] Fixture có hai khúc ESC tại bin 1 và 3, ngăn bởi BLOCK tại bin 2;
+      chuỗi oracle là PASS, ESC, BLOCK, ESC, BLOCK.
+- [x] `RS_HAND=0.18576`, `R2T_HAND=0.19149` được ghi như đáp án tính tay,
+      độc lập với output solver; risk tính theo chi phí/giao dịch.
+- [x] `Delta=0.00573>0` và khớp đáp án với `EPS=1e-9`.
+- [x] Cận A1 được kiểm: `Delta<=R0_HAND-RS_HAND=0.07874`.
+- [ ] Cận B chưa được kiểm riêng. `B_HAND` hiện là cận A1, không phải
+      `E|e-e0|`; với surrogate `M_FLAT`, B theo công thức mục 10 là 0.1275.
+- [x] Fixture có 5 bin rời rạc, trọng số `W` cộng bằng 1 và 1 triệu giao dịch;
+      không dùng tích phân số.
+- [ ] T3 chưa kiểm tường minh trường hợp ESC rỗng, score trùng và hòa.
 
 **Vì sao:** Một phản ví dụ có Delta dương không tự kiểm được cận hay tính
 độc lập oracle. T3 cần đo đúng regret của hạn chế hai ngưỡng trên cùng phân
@@ -199,7 +199,7 @@ Không dùng log unit test để xác nhận tuân thủ dữ liệu thực.
 
 ## Lệnh nghiệm thu
 
-Cài phụ thuộc test bằng `python -m pip install -r requirements-dev.txt`.
+Cài phụ thuộc test bằng `python -m pip install -r requirements.txt`.
 Chạy từ thư mục gốc repository:
 
 ```bash
@@ -209,4 +209,7 @@ python -m pytest tests/test_chow_constant.py -q
 
 Log phải chứa SHA commit chạy, lệnh, phiên bản môi trường, exit code và
 stdout/stderr thật. Chỉ ghi pass sau khi có log, không dùng kết quả unittest
-cũ thay log pytest. Chứng minh và giới hạn cận: `bound_B.md`.
+cũ thay log pytest. Log cục bộ hiện ở `outputs/test_chow_constant.log` và
+`outputs/test_all_an_week4.log`; cả hai ghi working tree còn thay đổi.
+Chứng minh và giới hạn cận: `theory.md` mục 9–11;
+bản viết ngắn để ghép báo cáo giữa kỳ: `docs/midterm_theory_section.md`.

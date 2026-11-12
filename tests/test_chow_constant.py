@@ -1,6 +1,7 @@
 """T1: calibrated finite Bayes oracles; independent A1/B bound checks."""
 import os
 import sys
+import platform
 import subprocess
 import unittest
 import numpy as np
@@ -76,7 +77,6 @@ class TestChowBaselines:
             np.testing.assert_allclose(closed_form_thresholds(c, c, A, D),
                                        (c/A, 1-c/D), atol=ATOL, rtol=RTOL)
 
-    @pytest.mark.xfail(strict=True, reason="closed_form_thresholds does not collapse an empty escalation region")
     def test_closed_form_empty_escalation_region(self):
         expected = 1/101
         np.testing.assert_allclose(closed_form_thresholds(1., 1.),
@@ -134,7 +134,6 @@ class TestChowConstant(unittest.TestCase):
         self.assertEqual((lo, hi), (.5, .5))
         np.testing.assert_array_equal(actions_from_thresholds([.49, .5, .51], lo, hi), [PASS, BLOCK, BLOCK])
 
-    @unittest.expectedFailure  # known closed_form_thresholds empty-region defect
     def test_expensive_escalation_has_empty_region(self):
         lo, hi = closed_form_thresholds(50., 50.)
         self.assertEqual(lo, hi)
@@ -148,7 +147,6 @@ class TestChowConstant(unittest.TestCase):
         a = actions_from_thresholds(s, 0., 1.)
         np.testing.assert_allclose(r[np.arange(3), a], 0., atol=ATOL)
 
-    @unittest.expectedFailure  # known thresholds_from_ij boundary defect
     def test_all_empty_bin_regions_roundtrip(self):
         edges = np.array([.1, .5])
         s = np.array([0., .1, .3, .5, 1.])
@@ -161,7 +159,6 @@ class TestChowConstant(unittest.TestCase):
         self.assertEqual(thresholds_from_ij([], 0, 0), (-np.inf, -np.inf))
         self.assertEqual(thresholds_from_ij([], 1, 1), (np.inf, np.inf))
 
-    @unittest.expectedFailure  # known exact_two_threshold all-PASS boundary defect
     def test_exact_solver_all_pass(self):
         c = np.full((3, 3), 2.)
         c[:, PASS] = 0.
@@ -190,7 +187,6 @@ class TestChowConstant(unittest.TestCase):
         np.testing.assert_array_equal(s, s0); np.testing.assert_array_equal(c, c0)
         np.testing.assert_array_equal(per_bin_actions(np.zeros((2, 3))), [PASS, PASS])
 
-    @unittest.expectedFailure  # input validation is not yet part of the API contract
     def test_invalid_closed_form_parameters(self):
         for ap, am, fn, fp in [(-1, .2, 100, 1), (.2, .2, 0, 1), (np.nan, .2, 100, 1)]:
             with self.assertRaises(ValueError):
@@ -198,7 +194,6 @@ class TestChowConstant(unittest.TestCase):
 
 
 class TestBoundA1AndB(unittest.TestCase):
-    @unittest.expectedFailure  # depends on the known empty-region defect
     def test_collapsed_surrogate_still_satisfies_bound(self):
         s = np.linspace(0., 1., 101)
         w = np.full(s.size, 1/s.size)
@@ -249,10 +244,17 @@ class TestBoundA1AndB(unittest.TestCase):
 
 if __name__ == '__main__':
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sha = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=repo_root,
+                         capture_output=True, text=True, check=True).stdout.strip()
+    dirty = bool(subprocess.run(['git', 'status', '--porcelain'], cwd=repo_root,
+                                capture_output=True, text=True, check=True).stdout.strip())
     command = [sys.executable, '-m', 'pytest', '-p', 'no:cacheprovider',
                '-q', '-rx', os.path.abspath(__file__)]
     result = subprocess.run(command, cwd=repo_root, capture_output=True, text=True)
-    log = ('$ ' + ' '.join(command) + '\n' + result.stdout + result.stderr
+    log = (f'Git HEAD: {sha} ({"dirty working tree" if dirty else "clean"})\n'
+           f'Python: {platform.python_version()} | pytest: {pytest.__version__} '
+           f'| NumPy: {np.__version__}\n'
+           '$ ' + ' '.join(command) + '\n' + result.stdout + result.stderr
            + f'\nExit code: {result.returncode}\n')
     log_path = os.path.join(repo_root, 'outputs', 'test_chow_constant.log')
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
