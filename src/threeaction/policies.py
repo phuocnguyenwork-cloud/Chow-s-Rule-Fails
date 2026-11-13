@@ -47,8 +47,8 @@ def best_two_threshold(table):
 def thresholds_from_ij(edges, i, j):
     """Translate (i, j) into score thresholds (t_L, t_H)."""
     K = len(edges) + 1
-    t_low = -np.inf if i == 0 else float(edges[i - 1])
-    t_high = np.inf if j == K else float(edges[j - 1])
+    t_low = -np.inf if i == 0 else (np.inf if i == K else float(edges[i - 1]))
+    t_high = -np.inf if j == 0 else (np.inf if j == K else float(edges[j - 1]))
     return t_low, t_high
 
 

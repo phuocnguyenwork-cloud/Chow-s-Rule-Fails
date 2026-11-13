@@ -80,6 +80,17 @@ def roc_optimal_thresholds(s, y, a_plus, a_minus, c_miss=C_MISS, c_false_block=C
 
 def closed_form_thresholds(a_plus, a_minus, c_miss=C_MISS, c_false_block=C_FALSE_BLOCK):
     """Population thresholds for a CALIBRATED score under the same constant-cost model."""
+    params = np.asarray([a_plus, a_minus, c_miss, c_false_block], dtype=float)
+    if (not np.all(np.isfinite(params)) or np.any(params[:2] < 0)
+            or np.any(params[2:] <= 0)):
+        raise ValueError("Escalation costs must be nonnegative and error costs positive")
+
+    # Escalation is optimal on an interval only when it beats both direct
+    # actions at their crossing. Otherwise the binary threshold is optimal.
+    binary_t = c_false_block / (c_miss + c_false_block)
+    if a_plus / c_miss + a_minus / c_false_block >= 1:
+        return binary_t, binary_t
+
     t_low = a_minus / (c_miss - a_plus + a_minus)
     t_high = (c_false_block - a_minus) / (c_false_block - a_minus + a_plus)
     return t_low, t_high
@@ -145,6 +156,6 @@ def exact_two_threshold(s, costs):
     kH = int(np.argmin(tot))
     kL = int(run_arg[kH])
     cost = (tot[kH] + cum[n, BLOCK]) / n
-    t_low = -np.inf if kL == 0 else float(sa[kL])
+    t_low = -np.inf if kL == 0 else (np.inf if kL == n else float(sa[kL]))
     t_high = np.inf if kH == n else float(sa[kH])
     return t_low, t_high, float(cost)
