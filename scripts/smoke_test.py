@@ -26,6 +26,7 @@ from threeaction.calibrate import PlattCalibrator, ece          # noqa: E402
 from threeaction.costs import ACTION_NAMES                      # noqa: E402
 from threeaction.pipeline import run_policies                   # noqa: E402
 from threeaction.synthetic import SyntheticConfig, generate     # noqa: E402
+from sklearn.model_selection import KFold                       # noqa: E402
 
 K, METHOD, MIN_POS, N_BOOT = 16, "logit", 5, 300
 
@@ -36,8 +37,16 @@ def one_split(scenario, seed):
     tr, rest = train_test_split(idx, test_size=0.4, stratify=d["y"], random_state=seed)
     va, te = train_test_split(rest, test_size=0.5, stratify=d["y"][rest], random_state=seed)
 
-    cal = PlattCalibrator().fit(d["p_raw"][va], d["y"][va])     # learned on VAL only
+    # Platt OOF on TRAIN (5-fold) — no val leakage
+    p_raw_tr = d["p_raw"][tr]
+    p_raw_oof = np.empty_like(p_raw_tr)
+    kf = KFold(n_splits=5, shuffle=True, random_state=seed)
+    for fold_tr, fold_va in kf.split(tr):
+        cal_fold = PlattCalibrator().fit(p_raw_tr[fold_tr], d["y"][tr[fold_tr]])
+        p_raw_oof[fold_va] = cal_fold.transform(p_raw_tr[fold_va])
+    cal = PlattCalibrator().fit(p_raw_oof, d["y"][tr])  # Platt from OOF train
     s = cal.transform(d["p_raw"])
+    s[tr] = cal.transform(p_raw_oof)  # train rows use OOF score
     ece_raw = ece(d["p_raw"][te], d["y"][te])
     ece_cal = ece(s[te], d["y"][te])
 
