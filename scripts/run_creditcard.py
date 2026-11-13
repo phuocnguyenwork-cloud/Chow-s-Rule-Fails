@@ -43,7 +43,7 @@ ALL_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 29)]
 TIER1_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 11)]  # placeholder
 
 
-def load(csv=None, openml=False, dedupe=True):
+def load(csv=None, openml=False, dedupe=False):
     if csv:
         df = pd.read_csv(csv)
     elif openml:
@@ -60,12 +60,32 @@ def load(csv=None, openml=False, dedupe=True):
     n0 = len(df)
     if dedupe:
         df = df.drop_duplicates(subset=ALL_FEATURES + [label]).reset_index(drop=True)
-    print(f"rows: {n0} -> {len(df)} after dedupe={dedupe}; frauds: {int(df[label].sum())} "
+    print(f"rows: {n0} -> {len(df)} (dedupe={dedupe}); frauds: {int(df[label].sum())} "
           f"({100 * df[label].mean():.3f}%)")
-    return df[ALL_FEATURES].reset_index(drop=True), df[label].to_numpy()
+    group_ids = df.groupby(ALL_FEATURES, sort=False).ngroup().to_numpy(dtype=np.int64)
+    return df[ALL_FEATURES].reset_index(drop=True), df[label].to_numpy(), group_ids
 
 
-def one_split(X, y, seed, K, method, min_pos, n_boot, splits_archive=None):
+def get_group_cv_folds(groups_tr, y_tr, n_splits=5, seed=0):
+    """Generate group-aware stratified cross-validation folds on train."""
+    unique_groups, group_first, group_inv = np.unique(
+        groups_tr, return_index=True, return_inverse=True
+    )
+    group_y = y_tr[group_first]
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+    group_fold = np.empty(len(unique_groups), dtype=np.int8)
+    for f_idx, (_, te_grp_idx) in enumerate(skf.split(unique_groups, group_y)):
+        group_fold[te_grp_idx] = f_idx
+    sample_fold = group_fold[group_inv]
+    folds = []
+    for i in range(n_splits):
+        cv_tr = np.where(sample_fold != i)[0]
+        cv_va = np.where(sample_fold == i)[0]
+        folds.append((cv_tr, cv_va))
+    return folds
+
+
+def one_split(X, y, group_ids, seed, K, method, min_pos, n_boot, splits_archive=None):
     if splits_archive is not None and f"train_{seed}" in splits_archive:
         tr = splits_archive[f"train_{seed}"]
         va = splits_archive[f"val_{seed}"]
@@ -75,18 +95,33 @@ def one_split(X, y, seed, K, method, min_pos, n_boot, splits_archive=None):
         tr, rest = train_test_split(idx, test_size=0.4, stratify=y, random_state=seed)
         va, te = train_test_split(rest, test_size=0.5, stratify=y[rest], random_state=seed)
 
-    # tier 1 + Platt (learned on VAL only)
-    lr = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
-    lr.fit(X.iloc[tr][TIER1_FEATURES], y[tr])
-    p_raw = lr.predict_proba(X[TIER1_FEATURES])[:, 1]
-    cal = PlattCalibrator().fit(p_raw[va], y[va])
-    s = cal.transform(p_raw)
+    # Group-aware CV folds inside train for both Tier 1 and Tier 2
+    cv_folds_tr = get_group_cv_folds(group_ids[tr], y[tr], n_splits=5, seed=seed)
 
-    # tier 2 and its fixed threshold t2 (out-of-fold on TRAIN)
+    # tier 1: OOF predictions on TRAIN for Platt calibration (group-aware CV, no val leakage)
+    lr = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
+    p_raw_oof_tr = cross_val_predict(
+        lr,
+        X.iloc[tr][TIER1_FEATURES], y[tr],
+        cv=cv_folds_tr,
+        method="predict_proba",
+    )[:, 1]
+    cal = PlattCalibrator().fit(p_raw_oof_tr, y[tr])  # Platt fit on OOF/train only
+    # Final tier-1 model fit on all train; used for val and test scoring
+    lr.fit(X.iloc[tr][TIER1_FEATURES], y[tr])
+    p_raw_full = lr.predict_proba(X[TIER1_FEATURES])[:, 1]
+    # Build score array: train uses OOF raw -> Platt; val/test use full-fit raw -> Platt
+    s = cal.transform(p_raw_full)          # Platt applied to full-fit raw for val/test
+    s[tr] = cal.transform(p_raw_oof_tr)   # train rows override with OOF-based score
+
+    # tier 2 and its fixed threshold t2 (out-of-fold on TRAIN, group-aware CV)
     gb = HistGradientBoostingClassifier(random_state=seed)
-    p2_oof = cross_val_predict(gb, X.iloc[tr][ALL_FEATURES], y[tr],
-                               cv=StratifiedKFold(5, shuffle=True, random_state=seed),
-                               method="predict_proba")[:, 1]
+    p2_oof = cross_val_predict(
+        gb,
+        X.iloc[tr][ALL_FEATURES], y[tr],
+        cv=cv_folds_tr,
+        method="predict_proba",
+    )[:, 1]
     t2, _ = choose_t2(p2_oof, y[tr])
     gb.fit(X.iloc[tr][ALL_FEATURES], y[tr])
     p2 = gb.predict_proba(X[ALL_FEATURES])[:, 1]
@@ -109,7 +144,8 @@ def main():
     ap.add_argument("--method", default="logit", choices=["quantile", "logit", "fraud_quantile"])
     ap.add_argument("--min-pos", type=int, default=5)
     ap.add_argument("--n-boot", type=int, default=500)
-    ap.add_argument("--no-dedupe", action="store_true")
+    ap.add_argument("--dedupe", action="store_true",
+                    help="Drop duplicates (for sensitivity analysis only; default: False)")
     ap.add_argument("--splits", default=os.path.join(ROOT, "data", "splits_20.npz"),
                     help="Path to frozen splits npz (optional)")
     ap.add_argument("--out", default=os.path.join(ROOT, "outputs", "creditcard_results.json"))
@@ -120,11 +156,11 @@ def main():
         splits_archive = np.load(a.splits)
         print(f"Loaded frozen splits from {a.splits}")
 
-    X, y = load(a.csv, a.openml, dedupe=not a.no_dedupe)
+    X, y, group_ids = load(a.csv, a.openml, dedupe=a.dedupe)
     rows = []
     t0 = time.time()
     for seed in range(a.n_splits):
-        r = one_split(X, y, seed, a.K, a.method, a.min_pos, a.n_boot, splits_archive=splits_archive)
+        r = one_split(X, y, group_ids, seed, a.K, a.method, a.min_pos, a.n_boot, splits_archive=splits_archive)
         rg = r["test_regret"]
         print(f"split {seed:2d}: K_eff={r['K_effective']:2d} t2={r['t2']:.4f} "
               f"test cost two={r['test_cost_two']:.5f} bin={r['test_cost_bin']:.5f} "

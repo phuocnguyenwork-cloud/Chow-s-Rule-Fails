@@ -13,7 +13,7 @@ Trên Credit Card Fraud (tầng 1 hồi quy logistic đã hiệu chuẩn, tầng
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 make smoke            # hoặc: python scripts/smoke_test.py
-make test             # 23 unit test
+make test             # 67 unit tests (pytest)
 ```
 
 Kết quả mong đợi: dòng cuối là `SMOKE TEST PASSED`, mã thoát 0, và file `outputs/smoke_results.json`.
@@ -47,8 +47,10 @@ Kiểm tra sau khi tải: 284.807 dòng, 492 gian lận. Mặc định script lo
 ## Phương pháp tóm tắt
 
 - **Ba hành động:** cho qua / leo thang / chặn. Chi phí: bỏ sót gian lận 100, chặn nhầm 1, leo thang 0,2 cộng lỗi của tầng 2 (`src/threeaction/costs.py`).
-- **Tầng 1** cho điểm thô, **hiệu chuẩn Platt** học trên tập kiểm định thành điểm `s`. **Tầng 2** cho quyết định cuối với ngưỡng `t2` cố định một lần từ dự đoán ngoài mẫu trên train.
-- **Chia khoảng:** biên khoảng tính từ **train**, dùng nguyên cho val/test (`bins.py`: `quantile`, `logit`, `fraud_quantile`, kèm gộp khoảng để mỗi khoảng đủ gian lận).
+- **Tầng 1** cho điểm thô. **Hiệu chuẩn Platt** học trên dự đoán **ngoài fold** (5-fold CV trên train) thành điểm `s` — không dùng val để calibrate. **Tầng 2** gradient boosting, ngưỡng `t2` cố định từ OOF trên train.
+- **Chia khoảng:** biên khoảng tính từ **train** (OOF score), dùng nguyên cho val/test (`bins.py`: `quantile`, `logit`, `fraud_quantile`, kèm gộp khoảng để mỗi khoảng đủ gian lận).
+- **Split group-aware:** các hàng có cùng vector đặc trưng được gom vào cùng partition (train/val/test không chia cắt nhóm). Dùng `StratifiedGroupKFold(5)`.
+- **Đóng băng dữ liệu:** `python scripts/freeze_creditcard.py` sinh `data/splits_20.npz` và `data/manifest.json` (SHA-256 file gốc + splits). Xác minh: `python scripts/freeze_creditcard.py --verify` → `INTEGRITY CHECK PASSED`.
 - **Baseline ROC-optimal** (`roc_baseline.py`): giả định chi phí leo thang là hằng số theo lớp (a⁺ cho gian lận, a⁻ cho giao dịch hợp lệ, ước lượng từ **train**), đường ROC lấy từ **val**. Đại diện cho thiết kế hai ngưỡng truyền thống. Khác quét lưới ở chỗ nó tối ưu một *mô hình* chi phí (hằng số), còn quét lưới (`exact_two_threshold`, O(n)) tối ưu chi phí thật. Hai cách trùng nhau khi chi phí leo thang đúng là hằng số.
 - **Hai chính sách chọn từ cùng một bảng chi phí trên val** (`policies.py`): theo khoảng (mỗi khoảng chọn hành động rẻ nhất) và hai ngưỡng (cho qua → leo thang → chặn liền nhau, ngưỡng đặt trên biên khoảng nên là tập con của chính sách theo khoảng).
 - **Đánh giá chỉ trên test:** chi phí trung bình mỗi giao dịch, regret tuyệt đối và tương đối, khoảng tin cậy bootstrap theo cặp.
