@@ -36,7 +36,7 @@ def one_split(scenario, seed):
     tr, rest = train_test_split(idx, test_size=0.4, stratify=d["y"], random_state=seed)
     va, te = train_test_split(rest, test_size=0.5, stratify=d["y"][rest], random_state=seed)
 
-    cal = PlattCalibrator().fit(d["p_raw"][va], d["y"][va])     # learned on VAL only
+    cal = PlattCalibrator().fit(d["p_raw"][tr], d["y"][tr])     # learned on TRAIN only
     s = cal.transform(d["p_raw"])
     ece_raw = ece(d["p_raw"][te], d["y"][te])
     ece_cal = ece(s[te], d["y"][te])

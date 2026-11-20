@@ -24,7 +24,7 @@ def make_parts(scenario, seed, n=200_000, y_te_override=None):
     idx = np.arange(d["y"].size)
     tr, rest = train_test_split(idx, test_size=0.4, stratify=d["y"], random_state=seed)
     va, te = train_test_split(rest, test_size=0.5, stratify=d["y"][rest], random_state=seed)
-    s = PlattCalibrator().fit(d["p_raw"][va], d["y"][va]).transform(d["p_raw"])
+    s = PlattCalibrator().fit(d["p_raw"][tr], d["y"][tr]).transform(d["p_raw"])
     parts = [{"s": s[i], "y": d["y"][i], "tier2_block": d["tier2_block"][i]} for i in (tr, va, te)]
     if y_te_override is not None:
         parts[2]["y"] = y_te_override(parts[2]["y"])

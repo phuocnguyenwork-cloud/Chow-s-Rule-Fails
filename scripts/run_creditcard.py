@@ -5,17 +5,22 @@
   python scripts/run_creditcard.py --openml --n-splits 1        # needs internet
 
 Per split: stratified 60/20/20 -> tier 1 (logistic regression on a feature subset)
--> Platt calibration on VAL -> tier 2 (gradient boosting, all features) ->
+-> Platt calibration on OOF TRAIN -> tier 2 (gradient boosting, all features) ->
 t2 from out-of-fold TRAIN predictions -> bins from TRAIN -> policies chosen on
 VAL -> cost and paired-bootstrap regret on TEST.
 
-The tier-1 feature subset below is a PLACEHOLDER: the group must decide it.
+The tier-1 feature subset is held fixed for the week-5 scope lock.
 """
 import argparse
 import json
 import os
 import sys
 import time
+import hashlib
+import platform
+import subprocess
+from pathlib import Path
+import sklearn
 
 if sys.stdout.encoding != "utf-8":
     try:
@@ -28,7 +33,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import StratifiedKFold, cross_val_predict, train_test_split
+from sklearn.model_selection import cross_val_predict
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -37,10 +42,11 @@ sys.path.insert(0, os.path.join(ROOT, "src"))
 
 from threeaction.calibrate import PlattCalibrator, ece, reliability_table   # noqa: E402
 from threeaction.pipeline import run_policies                                # noqa: E402
+from threeaction.data_split import feature_groups, grouped_split, validate_split, group_oof_splits
 from threeaction.tier2 import choose_t2                                      # noqa: E402
 
 ALL_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 29)]
-TIER1_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 11)]  # placeholder
+TIER1_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 11)]  # frozen existing feature set; no subset search
 
 
 def load(csv=None, openml=False, dedupe=True):
@@ -53,39 +59,48 @@ def load(csv=None, openml=False, dedupe=True):
         raise SystemExit("give --csv PATH or --openml")
     df = df.rename(columns={c: c.strip() for c in df.columns})
     label = "Class" if "Class" in df.columns else df.columns[-1]
+    df[label] = pd.to_numeric(df[label], errors="raise")
+    if not np.isin(df[label], [0, 1]).all():
+        raise ValueError("Labels must be binary")
     df[label] = df[label].astype(int)
     missing = [c for c in ALL_FEATURES if c not in df.columns]
     if missing:
         raise SystemExit(f"missing columns: {missing}")
     n0 = len(df)
-    if dedupe:
-        df = df.drop_duplicates(subset=ALL_FEATURES + [label]).reset_index(drop=True)
-    print(f"rows: {n0} -> {len(df)} after dedupe={dedupe}; frauds: {int(df[label].sum())} "
+    # Keep duplicate rows; feature groups, never labels, constrain splitting.
+    df[ALL_FEATURES] = df[ALL_FEATURES].astype(np.float64)
+    feature_groups(df[ALL_FEATURES])
+    print(f"rows: {n0} -> {len(df)} with duplicate rows retained; frauds: {int(df[label].sum())} "
           f"({100 * df[label].mean():.3f}%)")
     return df[ALL_FEATURES].reset_index(drop=True), df[label].to_numpy()
 
 
 def one_split(X, y, seed, K, method, min_pos, n_boot, splits_archive=None):
-    if splits_archive is not None and f"train_{seed}" in splits_archive:
-        tr = splits_archive[f"train_{seed}"]
-        va = splits_archive[f"val_{seed}"]
-        te = splits_archive[f"test_{seed}"]
+    groups = feature_groups(X[ALL_FEATURES])
+    if splits_archive is not None:
+        required = [f"{part}_{seed}" for part in ("train", "val", "test")]
+        if any(k not in splits_archive for k in required):
+            raise ValueError(f"Incomplete frozen split for seed {seed}")
+        tr, va, te = [splits_archive[k] for k in required]
     else:
-        idx = np.arange(len(y))
-        tr, rest = train_test_split(idx, test_size=0.4, stratify=y, random_state=seed)
-        va, te = train_test_split(rest, test_size=0.5, stratify=y[rest], random_state=seed)
+        tr, va, te = grouped_split(y, groups, seed)
+    validate_split(y, groups, tr, va, te)
 
-    # tier 1 + Platt (learned on VAL only)
+    # tier 1 + Platt: scaler/model folds and calibration learn only from TRAIN
     lr = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
+    p1_oof = cross_val_predict(lr, X.iloc[tr][TIER1_FEATURES], y[tr],
+                               cv=group_oof_splits(y[tr], groups[tr], seed),
+                               method="predict_proba")[:, 1]
     lr.fit(X.iloc[tr][TIER1_FEATURES], y[tr])
     p_raw = lr.predict_proba(X[TIER1_FEATURES])[:, 1]
-    cal = PlattCalibrator().fit(p_raw[va], y[va])
+    p_raw[tr] = p1_oof
+    cal = PlattCalibrator().fit(p1_oof, y[tr])
     s = cal.transform(p_raw)
 
     # tier 2 and its fixed threshold t2 (out-of-fold on TRAIN)
     gb = HistGradientBoostingClassifier(random_state=seed)
     p2_oof = cross_val_predict(gb, X.iloc[tr][ALL_FEATURES], y[tr],
-                               cv=StratifiedKFold(5, shuffle=True, random_state=seed),
+                               cv=group_oof_splits(y[tr], groups[tr], seed),
                                method="predict_proba")[:, 1]
     t2, _ = choose_t2(p2_oof, y[tr])
     gb.fit(X.iloc[tr][ALL_FEATURES], y[tr])
@@ -109,10 +124,10 @@ def main():
     ap.add_argument("--method", default="logit", choices=["quantile", "logit", "fraud_quantile"])
     ap.add_argument("--min-pos", type=int, default=5)
     ap.add_argument("--n-boot", type=int, default=500)
-    ap.add_argument("--no-dedupe", action="store_true")
-    ap.add_argument("--splits", default=os.path.join(ROOT, "data", "splits_20.npz"),
+    ap.add_argument("--no-dedupe", action="store_true", help="Legacy flag; duplicate rows are always retained")
+    ap.add_argument("--splits", default=os.path.join(ROOT, "data", "splits_week5_grouped.npz"),
                     help="Path to frozen splits npz (optional)")
-    ap.add_argument("--out", default=os.path.join(ROOT, "outputs", "creditcard_results.json"))
+    ap.add_argument("--out", default=os.path.join(ROOT, "outputs", "creditcard_week5_results.json"))
     a = ap.parse_args()
 
     splits_archive = None
@@ -156,8 +171,27 @@ def main():
     print("\nAGGREGATE over", a.n_splits, "split(s):", json.dumps(agg, indent=2))
     print(f"elapsed {time.time() - t0:.1f}s")
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
+    def checksum(path):
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    root = Path(ROOT)
+    provenance = {
+        "protocol": "feature-group splits; retained rows; group-OOF train calibration",
+        "command": sys.argv,
+        "environment": {"python": platform.python_version(), "numpy": np.__version__,
+                        "pandas": pd.__version__, "sklearn": sklearn.__version__},
+        "source_hashes": {str(p.relative_to(root)): checksum(p)
+                          for folder in ("src", "scripts")
+                          for p in (root / folder).rglob("*.py")},
+        "csv_sha256": checksum(a.csv) if a.csv else None,
+        "splits_sha256": checksum(a.splits) if a.splits and Path(a.splits).exists() else None,
+        "tier1_features": TIER1_FEATURES, "tier2_features": ALL_FEATURES,
+        "costs": {"miss": 100, "false_block": 1, "escalate": .2},
+    }
+    if (root / ".git").exists():
+        provenance["git_head"] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+        provenance["git_status"] = subprocess.check_output(["git", "status", "--short"], cwd=ROOT, text=True)
     with open(a.out, "w") as f:
-        json.dump({"args": vars(a), "splits": rows, "aggregate": agg}, f, indent=2)
+        json.dump({"args": vars(a), "provenance": provenance, "splits": rows, "aggregate": agg}, f, indent=2)
 
 
 if __name__ == "__main__":

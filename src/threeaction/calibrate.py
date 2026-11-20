@@ -1,6 +1,6 @@
 """Platt scaling and a simple calibration error (ECE).
 
-Platt scaling is an increasing map p_raw -> s, learned on VALIDATION labels.
+Platt scaling is an increasing map p_raw -> s, learned on TRAIN labels (OOF scores for fitted models).
 Test labels are never used to learn it; test is only used to check it.
 """
 import numpy as np
