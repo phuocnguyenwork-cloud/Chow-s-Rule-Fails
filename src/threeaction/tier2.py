@@ -25,3 +25,14 @@ def choose_t2(p2, y, c_miss=C_MISS, c_false_block=C_FALSE_BLOCK):
     k = int(np.argmin(cost))
     t2 = np.inf if k == n else float(ps[k])
     return t2, float(cost[k] / n)
+
+
+def bayes_t2(c_miss=C_MISS, c_false_block=C_FALSE_BLOCK):
+    """Bayes-optimal decision threshold for tier 2 under asymmetric costs.
+
+    Loss if pass fraud: c_miss
+    Loss if block legit: c_false_block
+    Bayes optimal action is BLOCK iff p2 >= c_false_block / (c_miss + c_false_block).
+    For (c_miss=100, c_false_block=1), t2 = 1 / 101 approx 0.00990099.
+    """
+    return float(c_false_block / (c_miss + c_false_block))
