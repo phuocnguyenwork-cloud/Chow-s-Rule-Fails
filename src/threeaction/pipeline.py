@@ -7,7 +7,7 @@ Credit Card pipeline.
 import numpy as np
 
 from .bins import make_edges, merge_min_positives, assign_bins
-from .costs import per_txn_costs
+from .costs import per_txn_costs, PASS, ESCALATE, BLOCK, C_ESCALATE
 from .policies import (bin_cost_table, per_bin_actions, best_two_threshold,
                        thresholds_from_ij, is_two_threshold_shape,
                        per_txn_policy_cost, paired_bootstrap_regret)
@@ -16,18 +16,19 @@ from .roc_baseline import (class_escalation_costs, roc_optimal_thresholds,
 
 
 def run_policies(train, val, test, K=10, method="logit", min_pos=5,
-                 n_boot=1000, seed=0):
+                 n_boot=1000, seed=0, c_escalate=C_ESCALATE):
     """Each of train/val/test is a dict with keys s, y, tier2_block.
 
     Edges come from TRAIN only; the cost table and both policies are chosen on
     VAL only; the reported cost/regret are measured on TEST only.
+    c_escalate: cost of escalating to tier 2 (default: C_ESCALATE = 0.2).
     """
     edges = make_edges(train["s"], train["y"], K, method)
     edges = merge_min_positives(edges, train["s"], train["y"], min_pos)
     K_eff = len(edges) + 1
 
-    c_val = per_txn_costs(val["y"], val["tier2_block"])
-    c_test = per_txn_costs(test["y"], test["tier2_block"])
+    c_val = per_txn_costs(val["y"], val["tier2_block"], c_escalate=c_escalate)
+    c_test = per_txn_costs(test["y"], test["tier2_block"], c_escalate=c_escalate)
     b_val = assign_bins(val["s"], edges)
     b_test = assign_bins(test["s"], edges)
 
@@ -45,7 +46,7 @@ def run_policies(train, val, test, K=10, method="logit", min_pos=5,
 
     # ---- ROC-optimal baseline (constant class-wise escalation cost) ----
     # a+, a- from TRAIN only; ROC curve and thresholds from VAL only.
-    a_plus, a_minus = class_escalation_costs(train["y"], train["tier2_block"])
+    a_plus, a_minus = class_escalation_costs(train["y"], train["tier2_block"], c_escalate=c_escalate)
     t_low_roc, t_high_roc, roc_info = roc_optimal_thresholds(
         val["s"], val["y"], a_plus, a_minus, prior_pos=float(np.mean(train["y"])))
     roc_val = cost_from_thresholds(val["s"], t_low_roc, t_high_roc, c_val)
@@ -56,6 +57,15 @@ def run_policies(train, val, test, K=10, method="logit", min_pos=5,
     # exact best two-threshold over ALL cut points for the real val costs
     t_low_ex, t_high_ex, ex_val_cost = exact_two_threshold(val["s"], c_val)
     ex_test = cost_from_thresholds(test["s"], t_low_ex, t_high_ex, c_test)
+
+    # Escalation rates on test set
+    test_two_act = act_two[b_test]
+    test_bin_act = act_bin[b_test]
+    test_exact_act = np.where(test["s"] < t_low_ex, PASS,
+                              np.where(test["s"] < t_high_ex, ESCALATE, BLOCK))
+    test_roc_act = np.where(test["s"] < t_low_roc, PASS,
+                            np.where(test["s"] < t_high_roc, ESCALATE, BLOCK))
+
     roc = {
         "a_plus": a_plus, "a_minus": a_minus, "escalates": roc_info["escalates"],
         "t_low": t_low_roc, "t_high": t_high_roc,
@@ -72,6 +82,7 @@ def run_policies(train, val, test, K=10, method="logit", min_pos=5,
     exact = {"t_low": t_low_ex, "t_high": t_high_ex, "val_cost": ex_val_cost,
              "test_cost": float(ex_test.mean())}
     return {
+        "c_escalate": float(c_escalate),
         "roc": roc, "exact_two_threshold": exact,
         "K_effective": K_eff,
         "edges": edges,
@@ -85,5 +96,9 @@ def run_policies(train, val, test, K=10, method="logit", min_pos=5,
         "val_cost_bin": float(val_bin.mean()),
         "test_cost_two": float(test_two.mean()),
         "test_cost_bin": float(test_bin.mean()),
+        "escalate_rate_two": float(np.mean(test_two_act == ESCALATE)),
+        "escalate_rate_bin": float(np.mean(test_bin_act == ESCALATE)),
+        "escalate_rate_exact": float(np.mean(test_exact_act == ESCALATE)),
+        "escalate_rate_roc": float(np.mean(test_roc_act == ESCALATE)),
         "test_regret": regret,
     }
