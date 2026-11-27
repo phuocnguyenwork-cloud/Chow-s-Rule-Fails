@@ -13,3 +13,5 @@ data/*
 # kết quả sinh ra khi chạy
 outputs/*
 !outputs/.gitkeep
+!outputs/c_sensitivity_results.json
+!outputs/creditcard_results.json
