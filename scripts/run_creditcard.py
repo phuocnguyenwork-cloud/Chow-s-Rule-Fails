@@ -233,9 +233,34 @@ def main():
            "std_abs_regret_across_splits": float(np.std([r["regret_abs"] for r in rows]))}
     print("\nAGGREGATE over", a.n_splits, "split(s):", json.dumps(agg, indent=2))
     print(f"elapsed {time.time() - t0:.1f}s")
+    import hashlib
+    import subprocess
+
+    def file_sha256(path):
+        if not path or not os.path.exists(path):
+            return None
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            while chunk := f.read(65536):
+                h.update(chunk)
+        return h.hexdigest()
+
+    try:
+        git_commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+        ).strip()
+    except Exception:
+        git_commit = "unknown"
+
+    provenance = {
+        "git_commit": git_commit,
+        "csv_sha256": file_sha256(a.csv),
+        "splits_sha256": file_sha256(a.splits),
+        "date": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
     with open(a.out, "w") as f:
-        json.dump({"args": vars(a), "splits": rows, "aggregate": agg}, f, indent=2)
+        json.dump({"provenance": provenance, "args": vars(a), "splits": rows, "aggregate": agg}, f, indent=2)
 
 
 if __name__ == "__main__":

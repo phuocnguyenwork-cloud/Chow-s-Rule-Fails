@@ -227,9 +227,31 @@ def main():
     total_elapsed = time.time() - t0_total
     print(f"Toàn bộ 20 splits x 5 giá trị c hoàn thành trong {total_elapsed:.1f}s!")
 
+    import hashlib
+    import subprocess
+
+    def file_sha256(path):
+        if not path or not os.path.exists(path):
+            return None
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            while chunk := f.read(65536):
+                h.update(chunk)
+        return h.hexdigest()
+
+    try:
+        git_commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+        ).strip()
+    except Exception:
+        git_commit = "unknown"
+
     output_data = {
         "metadata": {
             "experiment": "c_sensitivity_scan_with_bayes_tier2",
+            "git_commit": git_commit,
+            "csv_sha256": file_sha256(a.csv),
+            "splits_sha256": file_sha256(a.splits),
             "date": time.strftime("%Y-%m-%d %H:%M:%S"),
             "n_splits": a.n_splits,
             "c_values": c_values,
