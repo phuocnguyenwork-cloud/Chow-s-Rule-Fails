@@ -1,0 +1,28 @@
+[
+  {
+    "method": "logit",
+    "cost_two": 0.057260160978979915,
+    "cost_bin": 0.057260160978979915,
+    "regret_pooled": 0.0,
+    "regret_mean_splits": 0.0,
+    "fragmented": 0,
+    "negative": 0,
+    "positive": 0,
+    "zero": 20,
+    "K_min": 4,
+    "K_max": 5
+  },
+  {
+    "method": "fraud_quantile",
+    "cost_two": 0.0362255405664972,
+    "cost_bin": 0.03630643064825044,
+    "regret_pooled": -0.0022279822144163648,
+    "regret_mean_splits": -0.0017004097589417434,
+    "fragmented": 2,
+    "negative": 1,
+    "positive": 1,
+    "zero": 18,
+    "K_min": 10,
+    "K_max": 10
+  }
+]

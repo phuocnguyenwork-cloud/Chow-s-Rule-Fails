@@ -1,0 +1,10 @@
+[
+  {
+    "name": "logit",
+    "exit_code": 0
+  },
+  {
+    "name": "fraud_quantile",
+    "exit_code": 0
+  }
+]

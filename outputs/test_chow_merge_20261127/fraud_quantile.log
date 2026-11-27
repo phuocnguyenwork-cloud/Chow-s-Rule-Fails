@@ -1,0 +1,91 @@
+{
+  "command": [
+    "python",
+    "-u",
+    "scripts/run_creditcard.py",
+    "--csv",
+    "data/creditcard_openml_1597.csv",
+    "--splits",
+    "data/splits_week5_grouped.npz",
+    "--n-splits",
+    "20",
+    "--K",
+    "10",
+    "--method",
+    "fraud_quantile",
+    "--min-pos",
+    "5",
+    "--n-boot",
+    "500",
+    "--c-escalate",
+    "0.2",
+    "--t2-mode",
+    "bayes",
+    "--out",
+    "/home/gacute/Documents/Project/DATH/Chow-s-Rule-Fails/outputs/test_chow_merge_20261127/fraud_quantile.json"
+  ],
+  "head": "e82e3b6641e42c40ab4c339260758ac3b334f0f1",
+  "merge_head": "ac262e97ebb0a553398356880dc1e51d9392823b"
+}
+Loaded frozen splits from data/splits_week5_grouped.npz
+rows: 284807 -> 284807 (dedupe=False); frauds: 492 (0.173%)
+split  0: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.03301 bin=0.03301 regret=+0.00000 (+0.00%) ECE(t1=0.00034, t2=0.00103) esc_rate(two=0.00%, exact=0.37%)
+          ROC: a+=35.03 a-=0.201 t=(0.00366, 0.0118) test cost=0.03047 | exact two-thr test cost=0.02859
+split  1: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.04746 bin=0.04746 regret=+0.00000 (+0.00%) ECE(t1=0.00015, t2=0.00102) esc_rate(two=0.00%, exact=0.15%)
+          ROC: a+=31.18 a-=0.201 t=(0.00396, 0.0234) test cost=0.04715 | exact two-thr test cost=0.04758
+split  2: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.02855 bin=0.02855 regret=+0.00000 (+0.00%) ECE(t1=0.00038, t2=0.00099) esc_rate(two=0.00%, exact=0.98%)
+          ROC: a+=32.98 a-=0.201 t=(0.00531, 0.0275) test cost=0.02922 | exact two-thr test cost=0.02913
+split  3: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.02659 bin=0.03187 regret=-0.00528 (-16.57%) ECE(t1=0.00048, t2=0.00118) esc_rate(two=0.00%, exact=0.42%)
+          ROC: a+=32.51 a-=0.201 t=(0.00488, 0.0207) test cost=0.02516 | exact two-thr test cost=0.02127
+split  4: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.04389 bin=0.04389 regret=+0.00000 (+0.00%) ECE(t1=0.00037, t2=0.00151) esc_rate(two=4.43%, exact=1.04%)
+          ROC: a+=41.89 a-=0.201 t=(0.00472, 0.0178) test cost=0.03587 | exact two-thr test cost=0.03587
+split  5: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.02864 bin=0.02864 regret=+0.00000 (+0.00%) ECE(t1=0.00031, t2=0.00063) esc_rate(two=0.00%, exact=0.00%)
+          ROC: a+=30.84 a-=0.201 t=(0.00260, 0.0134) test cost=0.03449 | exact two-thr test cost=0.03387
+split  6: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.02738 bin=0.02738 regret=+0.00000 (+0.00%) ECE(t1=0.00038, t2=0.00079) esc_rate(two=0.00%, exact=0.07%)
+          ROC: a+=35.69 a-=0.201 t=(0.01248, 0.0206) test cost=0.03017 | exact two-thr test cost=0.02917
+split  7: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.02497 bin=0.02497 regret=+0.00000 (+0.00%) ECE(t1=0.00028, t2=0.00103) esc_rate(two=0.00%, exact=0.58%)
+          ROC: a+=33.76 a-=0.201 t=(0.00448, 0.0172) test cost=0.02625 | exact two-thr test cost=0.02406
+split  8: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.03169 bin=0.03169 regret=+0.00000 (+0.00%) ECE(t1=0.00027, t2=0.00081) esc_rate(two=0.00%, exact=1.29%)
+          ROC: a+=39.05 a-=0.201 t=(0.00415, 0.0189) test cost=0.03418 | exact two-thr test cost=0.03418
+split  9: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.04310 bin=0.04310 regret=+0.00000 (+0.00%) ECE(t1=0.00038, t2=0.00175) esc_rate(two=0.00%, exact=0.00%)
+          ROC: a+=27.98 a-=0.201 t=(0.00332, 0.0499) test cost=0.04808 | exact two-thr test cost=0.03976
+split 10: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.03853 bin=0.03844 regret=+0.00008 (+0.22%) ECE(t1=0.00051, t2=0.00082) esc_rate(two=0.00%, exact=0.27%)
+          ROC: a+=32.41 a-=0.201 t=(0.00676, 0.0152) test cost=0.03528 | exact two-thr test cost=0.03812
+split 11: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.04713 bin=0.04878 regret=-0.00165 (-3.38%) ECE(t1=0.00020, t2=0.00120) esc_rate(two=2.97%, exact=0.65%)
+          ROC: a+=41.50 a-=0.201 t=(0.00233, 0.0246) test cost=0.04341 | exact two-thr test cost=0.03916
+split 12: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.02526 bin=0.02526 regret=+0.00000 (+0.00%) ECE(t1=0.00046, t2=0.00131) esc_rate(two=0.00%, exact=0.64%)
+          ROC: a+=36.56 a-=0.201 t=(0.00512, 0.0188) test cost=0.02805 | exact two-thr test cost=0.02767
+split 13: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.05200 bin=0.05200 regret=+0.00000 (+0.00%) ECE(t1=0.00054, t2=0.00100) esc_rate(two=0.00%, exact=0.00%)
+          ROC: a+=39.79 a-=0.201 t=(0.00530, 0.0100) test cost=0.04354 | exact two-thr test cost=0.04580
+split 14: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.03828 bin=0.03828 regret=+0.00000 (+0.00%) ECE(t1=0.00028, t2=0.00111) esc_rate(two=0.00%, exact=0.07%)
+          ROC: a+=27.14 a-=0.201 t=(0.00318, 0.0224) test cost=0.04092 | exact two-thr test cost=0.03860
+split 15: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.04025 bin=0.04025 regret=+0.00000 (+0.00%) ECE(t1=0.00030, t2=0.00094) esc_rate(two=0.00%, exact=0.00%)
+          ROC: a+=32.97 a-=0.201 t=(0.00648, 0.0097) test cost=0.03702 | exact two-thr test cost=0.03644
+split 16: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.04819 bin=0.04819 regret=+0.00000 (+0.00%) ECE(t1=0.00040, t2=0.00076) esc_rate(two=5.99%, exact=0.61%)
+          ROC: a+=35.55 a-=0.201 t=(0.00533, 0.0115) test cost=0.03236 | exact two-thr test cost=0.03722
+split 17: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.03320 bin=0.03320 regret=+0.00000 (+0.00%) ECE(t1=0.00055, t2=0.00130) esc_rate(two=0.00%, exact=0.67%)
+          ROC: a+=41.92 a-=0.201 t=(0.00372, 0.0138) test cost=0.03201 | exact two-thr test cost=0.03142
+split 18: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.03421 bin=0.03421 regret=+0.00000 (+0.00%) ECE(t1=0.00024, t2=0.00119) esc_rate(two=0.00%, exact=0.00%)
+          ROC: a+=38.79 a-=0.201 t=(0.00326, 0.0142) test cost=0.03430 | exact two-thr test cost=0.03296
+split 19: K_eff=10 t2=0.0099 (mode=bayes, c=0.2) test cost two=0.03248 bin=0.03248 regret=+0.00000 (+0.00%) ECE(t1=0.00055, t2=0.00097) esc_rate(two=0.00%, exact=0.64%)
+          ROC: a+=39.18 a-=0.201 t=(0.00552, 0.0240) test cost=0.03090 | exact two-thr test cost=0.03066
+
+AGGREGATE over 20 split(s): {
+  "c_escalate": 0.2,
+  "t2_mode": "bayes",
+  "mean_cost_roc": 0.034940709881114425,
+  "mean_cost_exact_two": 0.0340751672523638,
+  "mean_rel_regret_roc": -0.044877733073900146,
+  "mean_cost_two": 0.03624017928148083,
+  "mean_cost_bin": 0.036582447180888385,
+  "mean_abs_regret": -0.00034226789940755564,
+  "mean_rel_regret": -0.00935606898344311,
+  "mean_escalate_rate_two": 0.006696578933602755,
+  "mean_escalate_rate_exact": 0.004224337796124351,
+  "mean_escalate_rate_roc": 0.011691615636358513,
+  "std_abs_regret_across_splits": 0.0011887873434590665
+}
+elapsed 103.4s
+
+EXIT_CODE=0
+ELAPSED_SECONDS=108.69268894195557

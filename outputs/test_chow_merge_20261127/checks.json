@@ -1,0 +1,10 @@
+[
+  {
+    "name": "tests",
+    "exit_code": 0
+  },
+  {
+    "name": "smoke",
+    "exit_code": 0
+  }
+]

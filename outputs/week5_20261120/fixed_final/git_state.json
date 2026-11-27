@@ -1,0 +1,5 @@
+{
+  "base_head": "8e87cc9eaacc8bdfaa9b8a3921432fabe84716e3",
+  "status": " M README.md\n M scripts/run_creditcard.py\n M scripts/smoke_test.py\n M src/threeaction/calibrate.py\n M tests/test_roc.py\n?? docs/week5_member1_theory.md\n?? docs/week5_member2_experiments.md\n?? docs/week5_member3_scope_qa.md\n?? docs/week5_scope_lock_report.md\n?? scripts/freeze_week5.py\n?? src/threeaction/data_split.py\n?? tests/test_data_protocol.py\n",
+  "note": "Uncommitted working tree verified by per-file hashes; no clean-commit or CI claim"
+}

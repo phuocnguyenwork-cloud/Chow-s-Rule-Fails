@@ -5,11 +5,11 @@
   python scripts/run_creditcard.py --openml --n-splits 1        # needs internet
 
 Per split: stratified 60/20/20 -> tier 1 (logistic regression on a feature subset)
--> Platt calibration on VAL -> tier 2 (gradient boosting, all features) ->
+-> Platt calibration on OOF TRAIN -> tier 2 (gradient boosting, all features) ->
 t2 from out-of-fold TRAIN predictions -> bins from TRAIN -> policies chosen on
 VAL -> cost and paired-bootstrap regret on TEST.
 
-The tier-1 feature subset below is a PLACEHOLDER: the group must decide it.
+The existing tier-1 feature subset is fixed; no subset search.
 """
 import argparse
 import json
@@ -38,10 +38,11 @@ sys.path.insert(0, os.path.join(ROOT, "src"))
 from threeaction.calibrate import PlattCalibrator, ece, reliability_table   # noqa: E402
 from threeaction.costs import C_MISS, C_FALSE_BLOCK, C_ESCALATE              # noqa: E402
 from threeaction.pipeline import run_policies                                # noqa: E402
+from threeaction.data_split import feature_groups, grouped_split, validate_split
 from threeaction.tier2 import choose_t2, bayes_t2                            # noqa: E402
 
 ALL_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 29)]
-TIER1_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 11)]  # placeholder
+TIER1_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 11)]  # fixed feature set
 
 
 def load(csv=None, openml=False, dedupe=False):
@@ -54,16 +55,21 @@ def load(csv=None, openml=False, dedupe=False):
         raise SystemExit("give --csv PATH or --openml")
     df = df.rename(columns={c: c.strip() for c in df.columns})
     label = "Class" if "Class" in df.columns else df.columns[-1]
+    df[label] = pd.to_numeric(df[label], errors="raise")
+    if not np.isin(df[label], [0, 1]).all():
+        raise ValueError("Labels must be binary")
     df[label] = df[label].astype(int)
     missing = [c for c in ALL_FEATURES if c not in df.columns]
     if missing:
         raise SystemExit(f"missing columns: {missing}")
+    df[ALL_FEATURES] = df[ALL_FEATURES].astype(np.float64)
+    feature_groups(df[ALL_FEATURES])
     n0 = len(df)
     if dedupe:
         df = df.drop_duplicates(subset=ALL_FEATURES + [label]).reset_index(drop=True)
     print(f"rows: {n0} -> {len(df)} (dedupe={dedupe}); frauds: {int(df[label].sum())} "
           f"({100 * df[label].mean():.3f}%)")
-    group_ids = df.groupby(ALL_FEATURES, sort=False).ngroup().to_numpy(dtype=np.int64)
+    group_ids = feature_groups(df[ALL_FEATURES])
     return df[ALL_FEATURES].reset_index(drop=True), df[label].to_numpy(), group_ids
 
 
@@ -72,7 +78,8 @@ def get_group_cv_folds(groups_tr, y_tr, n_splits=5, seed=0):
     unique_groups, group_first, group_inv = np.unique(
         groups_tr, return_index=True, return_inverse=True
     )
-    group_y = y_tr[group_first]
+    group_y = np.zeros(len(unique_groups), dtype=int)
+    np.maximum.at(group_y, group_inv, y_tr)
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
     group_fold = np.empty(len(unique_groups), dtype=np.int8)
     for f_idx, (_, te_grp_idx) in enumerate(skf.split(unique_groups, group_y)):
@@ -88,14 +95,16 @@ def get_group_cv_folds(groups_tr, y_tr, n_splits=5, seed=0):
 
 def one_split(X, y, group_ids, seed, K, method, min_pos, n_boot, splits_archive=None,
               c_escalate=C_ESCALATE, t2_mode="bayes"):
-    if splits_archive is not None and f"train_{seed}" in splits_archive:
-        tr = splits_archive[f"train_{seed}"]
-        va = splits_archive[f"val_{seed}"]
-        te = splits_archive[f"test_{seed}"]
+    # Derive identity from features, never trust externally supplied grouping.
+    group_ids = feature_groups(X[ALL_FEATURES])
+    if splits_archive is not None:
+        required = [f"{part}_{seed}" for part in ("train", "val", "test")]
+        if any(k not in splits_archive for k in required):
+            raise ValueError(f"Incomplete frozen split for seed {seed}")
+        tr, va, te = [splits_archive[k] for k in required]
     else:
-        idx = np.arange(len(y))
-        tr, rest = train_test_split(idx, test_size=0.4, stratify=y, random_state=seed)
-        va, te = train_test_split(rest, test_size=0.5, stratify=y[rest], random_state=seed)
+        tr, va, te = grouped_split(y, group_ids, seed)
+    validate_split(y, group_ids, tr, va, te)
 
     # Group-aware CV folds inside train for both Tier 1 and Tier 2
     cv_folds_tr = get_group_cv_folds(group_ids[tr], y[tr], n_splits=5, seed=seed)
@@ -258,7 +267,21 @@ def main():
         "splits_sha256": file_sha256(a.splits),
         "date": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
-    os.makedirs(os.path.dirname(a.out), exist_ok=True)
+    from pathlib import Path
+    import platform
+    import sklearn
+    provenance.update({
+        "git_status": subprocess.check_output(["git", "status", "--short"], cwd=ROOT, text=True),
+        "source_hashes": {str(p.relative_to(ROOT)): file_sha256(p)
+                          for folder in ("src", "scripts")
+                          for p in (Path(ROOT) / folder).rglob("*.py")},
+        "environment": {"python": platform.python_version(), "numpy": np.__version__,
+                        "pandas": pd.__version__, "sklearn": sklearn.__version__},
+        "command": sys.argv,
+        "tier1_features": TIER1_FEATURES, "tier2_features": ALL_FEATURES,
+        "protocol": "retained-row group splits; train OOF Platt for both tiers; explicit t2_mode",
+    })
+    os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     with open(a.out, "w") as f:
         json.dump({"provenance": provenance, "args": vars(a), "splits": rows, "aggregate": agg}, f, indent=2)
 

@@ -13,7 +13,7 @@ Trên Credit Card Fraud (tầng 1 hồi quy logistic đã hiệu chuẩn, tầng
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 make smoke            # hoặc: python scripts/smoke_test.py
-make test             # 67 unit tests (pytest)
+make test             # 127 tests
 ```
 
 Kết quả mong đợi: dòng cuối là `SMOKE TEST PASSED`, mã thoát 0, và file `outputs/smoke_results.json`.
@@ -42,15 +42,13 @@ python scripts/run_creditcard.py --csv data/creditcard.csv --n-splits 20 --K 10 
 # hoặc: python scripts/run_creditcard.py --openml --n-splits 1
 ```
 
-Kiểm tra sau khi tải: 284.807 dòng, 492 gian lận. Mặc định script loại các dòng trùng lặp và in số dòng trước/sau.
+Kiểm tra sau khi tải: 284.807 dòng, 492 gian lận. Script giữ mọi dòng và chia theo nhóm đặc trưng float64; nhóm trùng không xuyên train/val/test hoặc các fold OOF.
 
 ## Phương pháp tóm tắt
 
 - **Ba hành động:** cho qua / leo thang / chặn. Chi phí: bỏ sót gian lận 100, chặn nhầm 1, leo thang 0,2 cộng lỗi của tầng 2 (`src/threeaction/costs.py`).
-- **Tầng 1** cho điểm thô. **Hiệu chuẩn Platt** học trên dự đoán **ngoài fold** (5-fold CV trên train) thành điểm `s` — không dùng val để calibrate. **Tầng 2** gradient boosting, ngưỡng `t2` cố định từ OOF trên train.
-- **Chia khoảng:** biên khoảng tính từ **train** (OOF score), dùng nguyên cho val/test (`bins.py`: `quantile`, `logit`, `fraud_quantile`, kèm gộp khoảng để mỗi khoảng đủ gian lận).
-- **Split group-aware:** các hàng có cùng vector đặc trưng được gom vào cùng partition (train/val/test không chia cắt nhóm). Dùng `StratifiedGroupKFold(5)`.
-- **Đóng băng dữ liệu:** `python scripts/freeze_creditcard.py` sinh `data/splits_20.npz` và `data/manifest.json` (SHA-256 file gốc + splits). Xác minh: `python scripts/freeze_creditcard.py --verify` → `INTEGRITY CHECK PASSED`.
+- **Tầng 1** cho điểm thô, **hiệu chuẩn Platt** học trên dự đoán OOF-train, CV giữ nhóm đặc trưng thành điểm `s`. **Tầng 2** cho quyết định cuối với ngưỡng `t2` cố định một lần từ dự đoán ngoài mẫu trên train.
+- **Chia khoảng:** biên khoảng tính từ **train**, dùng nguyên cho val/test (`bins.py`: `quantile`, `logit`, `fraud_quantile`, kèm gộp khoảng để mỗi khoảng đủ gian lận).
 - **Baseline ROC-optimal** (`roc_baseline.py`): giả định chi phí leo thang là hằng số theo lớp (a⁺ cho gian lận, a⁻ cho giao dịch hợp lệ, ước lượng từ **train**), đường ROC lấy từ **val**. Đại diện cho thiết kế hai ngưỡng truyền thống. Khác quét lưới ở chỗ nó tối ưu một *mô hình* chi phí (hằng số), còn quét lưới (`exact_two_threshold`, O(n)) tối ưu chi phí thật. Hai cách trùng nhau khi chi phí leo thang đúng là hằng số.
 - **Hai chính sách chọn từ cùng một bảng chi phí trên val** (`policies.py`): theo khoảng (mỗi khoảng chọn hành động rẻ nhất) và hai ngưỡng (cho qua → leo thang → chặn liền nhau, ngưỡng đặt trên biên khoảng nên là tập con của chính sách theo khoảng).
 - **Đánh giá chỉ trên test:** chi phí trung bình mỗi giao dịch, regret tuyệt đối và tương đối, khoảng tin cậy bootstrap theo cặp.
@@ -59,15 +57,15 @@ Kiểm tra sau khi tải: 284.807 dòng, 492 gian lận. Mặc định script lo
 - Regret đo ở đây là so với chính sách tối ưu trong lớp "hàm của điểm tầng 1 chia K khoảng", ước lượng từ dữ liệu. **Không phải regret Bayes thật.**
 - Tập kiểm định chỉ có khoảng 98 gian lận: chính sách theo khoảng có thể khớp nhiễu (đã quan sát trong smoke test, kịch bản `constant`, seed 3). Vì vậy K nhỏ, có gộp khoảng, và báo cáo kèm khoảng tin cậy; regret âm hoặc gần 0 là kết quả hợp lệ.
 - Chia ngẫu nhiên, không xét trôi dữ liệu theo thời gian. 20 lần chia dùng chung dữ liệu nên không độc lập.
-- Chi phí 100/1/0,2 là giả định, cần quét độ nhạy.
-- Tập đặc trưng tầng 1 trong `run_creditcard.py` (Time, Amount, V1–V10) là **giá trị tạm**, nhóm cần quyết định.
+- Chi phí 100/1/0,2 là giả định đã khóa; không quét thêm độ nhạy trong tuần 5.
+- Tập đặc trưng tầng 1 giữ cố định: Amount, V1–V10 (không Time); tầng 2: Amount, V1–V28. Không tìm subset mới trong tuần 5.
 
 ## Cấu trúc thư mục
 
 ```
 src/threeaction/   costs, bins, calibrate, tier2, policies, roc_baseline, pipeline, synthetic
 scripts/           smoke_test.py (không cần mạng), run_creditcard.py (dữ liệu thật)
-tests/             test_core.py, test_roc.py (23 test; unittest, chạy được với pytest)
+tests/             test_core.py, test_roc.py (127 tests; unittest, chạy được với pytest)
 data/  outputs/    dữ liệu thô và kết quả (không commit)
 ```
 
@@ -78,3 +76,21 @@ data/  outputs/    dữ liệu thô và kết quả (không commit)
 - Narasimhan et al., NeurIPS 2022 
 - Chow, C. K. (1970), *On optimum recognition error and reject tradeoff* 
 
+
+## Tuần 5: protocol sau sửa lỗi
+
+Giữ dòng trùng, chia 60/20/20 theo nhóm (tỷ lệ dòng xấp xỉ); nhóm dùng feature float64, không nhãn. Nhãn any-positive chỉ dùng phân tầng nhóm. Scaler, hai mô hình và Platt chỉ học train/OOF-train. Archive cũ đã khử trùng không dùng với protocol này.
+
+```bash
+python scripts/freeze_week5.py --csv data/creditcard_openml_1597.csv
+python scripts/run_creditcard.py --csv data/creditcard_openml_1597.csv --n-splits 20 --K 10 --method logit --min-pos 5 --n-boot 500 --splits data/splits_week5_grouped.npz --out outputs/week5_logit.json
+python scripts/run_creditcard.py --csv data/creditcard_openml_1597.csv --n-splits 20 --K 10 --method fraud_quantile --min-pos 5 --n-boot 500 --splits data/splits_week5_grouped.npz --out outputs/week5_fraud_quantile.json
+```
+
+Artifact mới chứa hash mã nguồn, CSV, archive và phiên bản môi trường. Các artifact cũ là exploratory; không trộn hai protocol. Báo cáo thực thi nằm trong `outputs/week5_20261120/BAO_CAO_TUAN_5.md`.
+
+## Đồng bộ main ngày 27/11/2026
+
+Nhánh đã tích hợp `ac262e9`: runner hiện hiệu chuẩn cả tầng 2 bằng Platt OOF-train và mặc định `--t2-mode bayes` như main. Giữ kiểm tra group split và provenance của test_chow. Không chạy thêm lưới c trong lần đồng bộ này.
+
+Kết quả `outputs/week5_20261120/fixed_final/` là bằng chứng lịch sử của protocol ngày 20/11 (tầng 2 chưa Platt, chọn ngưỡng empirical). Không dùng runner hiện tại để tuyên bố tái tạo nguyên trạng các số đó. Snapshot mã tương ứng: `outputs/week5_20261120/source_fixed.zip`. Các lệnh tuần 5 ở trên dùng split tuần 5 nhưng chạy protocol tầng 2 hiện tại. Kết quả sau merge lưu riêng tại `outputs/test_chow_merge_20261127/`.

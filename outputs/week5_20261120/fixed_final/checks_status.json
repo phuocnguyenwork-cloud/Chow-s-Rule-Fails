@@ -1,0 +1,12 @@
+[
+  {
+    "name": "tests",
+    "exit_code": 0,
+    "seconds": 21.34337592124939
+  },
+  {
+    "name": "smoke",
+    "exit_code": 0,
+    "seconds": 3.780496835708618
+  }
+]

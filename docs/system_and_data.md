@@ -1,11 +1,13 @@
+> Tài liệu mô tả protocol week4 từ main. Runner hiện tích hợp thay đổi tầng 2 của ac262e9; xem `week5_merge_20261127.md` để phân biệt protocol và kết quả lịch sử.
+
 # §3 Hệ thống & Dữ liệu
 
 ## 3.1 Kiến trúc hai tầng
 
 Hệ thống phân loại giao dịch theo ba hành động: **cho qua (PASS)**, **chuyển tầng 2 (ESCALATE)**, **chặn (BLOCK)**. Quyết định dựa trên quy tắc hai ngưỡng: với điểm tầng 1 là `s`,
 
-- `s < t_L` → PASS  
-- `t_L ≤ s < t_H` → ESCALATE  
+- `s < t_L` → PASS
+- `t_L ≤ s < t_H` → ESCALATE
 - `s ≥ t_H` → BLOCK
 
 **Ma trận chi phí** (mỗi giao dịch):
@@ -16,10 +18,10 @@ Hệ thống phân loại giao dịch theo ba hành động: **cho qua (PASS)**,
 | ESCALATE | 0,2 + 100·1[tầng 2 bỏ sót] | 0,2 + 1·1[tầng 2 chặn nhầm] |
 | BLOCK | 0 | 1 (chặn nhầm) |
 
-**Tầng 1 — Hồi quy logistic:**  
+**Tầng 1 — Hồi quy logistic:**
 Fit trên tập con đặc trưng (Amount, V1–V10 — placeholder, nhóm cần quyết định). Điểm thô `p_raw` được hiệu chuẩn bằng **Platt scaling ngoài fold**: 5-fold CV trên tập train sinh điểm OOF; Platt fit trên `(p_raw_OOF, y_train)`. Mô hình cuối fit trên toàn bộ train; val và test dùng Platt của OOF. Dòng train dùng điểm OOF (không dùng điểm mô hình cuối) để tránh rò rỉ dữ liệu khi chọn ngưỡng và tính bảng chi phí.
 
-**Tầng 2 — Gradient Boosting:**  
+**Tầng 2 — Gradient Boosting:**
 Fit trên tất cả đặc trưng (Amount, V1–V28). Ngưỡng `t2` cố định từ OOF 5-fold trên train (tối thiểu chi phí `100·miss + 1·false_block`). Dòng train dùng quyết định OOF; val/test dùng quyết định của mô hình cuối.
 
 **Vai trò từng tập:**
@@ -34,9 +36,9 @@ Fit trên tất cả đặc trưng (Amount, V1–V28). Ngưỡng `t2` cố đị
 
 ## 3.2 Dữ liệu
 
-**Nguồn:** Credit Card Fraud Detection, ULB Machine Learning Group  
-OpenML ID: 1597 | Giấy phép: DbCL v1.0  
-**Đặc trưng:** Time, Amount, V1–V28 (28 thành phần PCA ẩn danh)  
+**Nguồn:** Credit Card Fraud Detection, ULB Machine Learning Group
+OpenML ID: 1597 | Giấy phép: DbCL v1.0
+**Đặc trưng:** Time, Amount, V1–V28 (28 thành phần PCA ẩn danh)
 **Nhãn:** Class (0 = hợp lệ, 1 = gian lận)
 
 **Phiên bản file (SHA-256):**
@@ -108,4 +110,3 @@ Bốn tính chất được xác nhận:
 2. **Score trùng không bị tách:** các giao dịch cùng score nhận cùng hành động.
 3. **Hòa chi phí:** khi nhiều cặp ngưỡng đồng tối ưu, risk vẫn bằng nhau (không phụ thuộc vào nghiệm cụ thể được chọn).
 4. **Thứ bậc rủi ro:** $R_{\text{oracle}} \leq R_{\text{B2}} \leq R_{\text{A1}}$ được kiểm tra trên 60 điểm ngẫu nhiên.
-

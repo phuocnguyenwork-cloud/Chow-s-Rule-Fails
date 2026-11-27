@@ -1,0 +1,66 @@
+{
+  "config": {
+    "K": 16,
+    "method": "logit",
+    "min_pos": 5,
+    "n_boot": 300
+  },
+  "summary": {
+    "constant": {
+      "mean_rel_regret": 0.0009908408837709468,
+      "mean_abs_regret": 0.0005025000000000168,
+      "per_bin_not_two_threshold_shape": 1,
+      "mean_roc_extra_cost_vs_exact_two_threshold": -0.007000218024561522,
+      "n_seeds": 4
+    },
+    "blind_spot": {
+      "mean_rel_regret": 0.09467997908637227,
+      "mean_abs_regret": 0.05318833333333332,
+      "per_bin_not_two_threshold_shape": 3,
+      "mean_roc_extra_cost_vs_exact_two_threshold": 0.489524817543735,
+      "n_seeds": 3
+    }
+  },
+  "checks": {
+    "constant/seed0: ROC val cost >= exact two-threshold optimum": true,
+    "constant/seed0: snapped ROC val cost >= best two-threshold on bins": true,
+    "constant/seed0: val cost per-bin <= two-threshold": true,
+    "constant/seed0: costs finite and positive": true,
+    "constant/seed0: calibration lowers ECE": true,
+    "constant/seed1: ROC val cost >= exact two-threshold optimum": true,
+    "constant/seed1: snapped ROC val cost >= best two-threshold on bins": true,
+    "constant/seed1: val cost per-bin <= two-threshold": true,
+    "constant/seed1: costs finite and positive": true,
+    "constant/seed1: calibration lowers ECE": true,
+    "constant/seed2: ROC val cost >= exact two-threshold optimum": true,
+    "constant/seed2: snapped ROC val cost >= best two-threshold on bins": true,
+    "constant/seed2: val cost per-bin <= two-threshold": true,
+    "constant/seed2: costs finite and positive": true,
+    "constant/seed2: calibration lowers ECE": true,
+    "constant/seed3: ROC val cost >= exact two-threshold optimum": true,
+    "constant/seed3: snapped ROC val cost >= best two-threshold on bins": true,
+    "constant/seed3: val cost per-bin <= two-threshold": true,
+    "constant/seed3: costs finite and positive": true,
+    "constant/seed3: calibration lowers ECE": true,
+    "blind_spot/seed0: ROC val cost >= exact two-threshold optimum": true,
+    "blind_spot/seed0: snapped ROC val cost >= best two-threshold on bins": true,
+    "blind_spot/seed0: val cost per-bin <= two-threshold": true,
+    "blind_spot/seed0: costs finite and positive": true,
+    "blind_spot/seed0: calibration lowers ECE": true,
+    "blind_spot/seed1: ROC val cost >= exact two-threshold optimum": true,
+    "blind_spot/seed1: snapped ROC val cost >= best two-threshold on bins": true,
+    "blind_spot/seed1: val cost per-bin <= two-threshold": true,
+    "blind_spot/seed1: costs finite and positive": true,
+    "blind_spot/seed1: calibration lowers ECE": true,
+    "blind_spot/seed2: ROC val cost >= exact two-threshold optimum": true,
+    "blind_spot/seed2: snapped ROC val cost >= best two-threshold on bins": true,
+    "blind_spot/seed2: val cost per-bin <= two-threshold": true,
+    "blind_spot/seed2: costs finite and positive": true,
+    "blind_spot/seed2: calibration lowers ECE": true,
+    "constant: |mean relative regret| < 2%": true,
+    "blind_spot: mean relative regret > 3%": true,
+    "blind_spot: per-bin policy is fragmented in every seed": true,
+    "constant: ROC within 3% of exact two-threshold (constant-cost model is right)": true,
+    "blind_spot: ROC costs > 10% more than exact two-threshold (constant-cost model is wrong)": true
+  }
+}
