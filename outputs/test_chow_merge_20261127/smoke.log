@@ -1,0 +1,84 @@
+{
+  "command": [
+    "python",
+    "scripts/smoke_test.py"
+  ],
+  "head": "e82e3b6641e42c40ab4c339260758ac3b334f0f1",
+  "merge_head": "ac262e97ebb0a553398356880dc1e51d9392823b"
+}
+
+=== scenario: constant ===
+ seed 0: K_eff=14  per-bin: P E E E E E E E B B B B B B  | two-thr: P E E E E E E E B B B B B B
+          test cost two=0.5383 bin=0.5383  regret=+0.0000 (+0.0%) CI95 rel [+0.0%, +0.0%]  ECE raw->cal 0.0243->0.0026
+          ROC baseline: a+=10.34 a-=0.230 t=(0.00200, 0.0855) | test cost roc=0.5413 exact-two-thr=0.5440  roc vs per-bin +0.6%
+ seed 1: K_eff=14  per-bin: P P P E E E E B B B B B B B  | two-thr: P P P E E E E B B B B B B B
+          test cost two=0.5134 bin=0.5134  regret=+0.0000 (+0.0%) CI95 rel [+0.0%, +0.0%]  ECE raw->cal 0.0253->0.0024
+          ROC baseline: a+=10.34 a-=0.231 t=(0.00532, 0.0605) | test cost roc=0.5140 exact-two-thr=0.5196  roc vs per-bin +0.1%
+ seed 2: K_eff=13  per-bin: P E E E E E B B B B B B B  | two-thr: P E E E E E B B B B B B B
+          test cost two=0.5432 bin=0.5432  regret=+0.0000 (+0.0%) CI95 rel [+0.0%, +0.0%]  ECE raw->cal 0.0237->0.0027
+          ROC baseline: a+=10.41 a-=0.230 t=(0.00147, 0.0695) | test cost roc=0.5330 exact-two-thr=0.5379  roc vs per-bin -1.9%
+ seed 3: K_eff=15  per-bin: P E P E E E E E E B B B B B B  | two-thr: P P P E E E E E E B B B B B B
+          test cost two=0.5092 bin=0.5071  regret=+0.0020 (+0.4%) CI95 rel [-1.1%, +2.8%]  ECE raw->cal 0.0243->0.0018
+          ROC baseline: a+=10.20 a-=0.229 t=(0.00361, 0.0632) | test cost roc=0.5020 exact-two-thr=0.5036  roc vs per-bin -1.0%
+ -> ROC test cost vs exact best two-threshold: -0.7% (mean over seeds)
+ -> mean relative regret +0.10%  (per-bin policy left the two-threshold shape in 1/4 seeds)
+
+=== scenario: blind_spot ===
+ seed 0: K_eff=14  per-bin: P E E E E B B E E E B B B B  | two-thr: P E E E E B B B B B B B B B
+          test cost two=0.6206 bin=0.5372  regret=+0.0834 (+15.5%) CI95 rel [+9.3%, +21.7%]  ECE raw->cal 0.0243->0.0026
+          ROC baseline: a+=8.43 a-=0.230 t=(0.00200, 0.0856) | test cost roc=0.9562 exact-two-thr=0.6227  roc vs per-bin +78.0%
+ seed 1: K_eff=14  per-bin: P P P E E B B E E B B B B B  | two-thr: P P P E E B B B B B B B B B
+          test cost two=0.6235 bin=0.6021  regret=+0.0214 (+3.6%) CI95 rel [-1.4%, +9.8%]  ECE raw->cal 0.0253->0.0024
+          ROC baseline: a+=8.49 a-=0.231 t=(0.00532, 0.0881) | test cost roc=0.8974 exact-two-thr=0.6153  roc vs per-bin +49.1%
+ seed 2: K_eff=13  per-bin: P E E E B B B E E B B B B  | two-thr: P E E E B B B B B B B B B
+          test cost two=0.6420 bin=0.5873  regret=+0.0548 (+9.3%) CI95 rel [+5.3%, +13.5%]  ECE raw->cal 0.0237->0.0027
+          ROC baseline: a+=8.92 a-=0.230 t=(0.00147, 0.0826) | test cost roc=0.9377 exact-two-thr=0.6360  roc vs per-bin +59.7%
+ -> ROC test cost vs exact best two-threshold: +49.0% (mean over seeds)
+ -> mean relative regret +9.47%  (per-bin policy left the two-threshold shape in 3/3 seeds)
+
+=== checks ===
+ [PASS] constant/seed0: ROC val cost >= exact two-threshold optimum
+ [PASS] constant/seed0: snapped ROC val cost >= best two-threshold on bins
+ [PASS] constant/seed0: val cost per-bin <= two-threshold
+ [PASS] constant/seed0: costs finite and positive
+ [PASS] constant/seed0: calibration lowers ECE
+ [PASS] constant/seed1: ROC val cost >= exact two-threshold optimum
+ [PASS] constant/seed1: snapped ROC val cost >= best two-threshold on bins
+ [PASS] constant/seed1: val cost per-bin <= two-threshold
+ [PASS] constant/seed1: costs finite and positive
+ [PASS] constant/seed1: calibration lowers ECE
+ [PASS] constant/seed2: ROC val cost >= exact two-threshold optimum
+ [PASS] constant/seed2: snapped ROC val cost >= best two-threshold on bins
+ [PASS] constant/seed2: val cost per-bin <= two-threshold
+ [PASS] constant/seed2: costs finite and positive
+ [PASS] constant/seed2: calibration lowers ECE
+ [PASS] constant/seed3: ROC val cost >= exact two-threshold optimum
+ [PASS] constant/seed3: snapped ROC val cost >= best two-threshold on bins
+ [PASS] constant/seed3: val cost per-bin <= two-threshold
+ [PASS] constant/seed3: costs finite and positive
+ [PASS] constant/seed3: calibration lowers ECE
+ [PASS] blind_spot/seed0: ROC val cost >= exact two-threshold optimum
+ [PASS] blind_spot/seed0: snapped ROC val cost >= best two-threshold on bins
+ [PASS] blind_spot/seed0: val cost per-bin <= two-threshold
+ [PASS] blind_spot/seed0: costs finite and positive
+ [PASS] blind_spot/seed0: calibration lowers ECE
+ [PASS] blind_spot/seed1: ROC val cost >= exact two-threshold optimum
+ [PASS] blind_spot/seed1: snapped ROC val cost >= best two-threshold on bins
+ [PASS] blind_spot/seed1: val cost per-bin <= two-threshold
+ [PASS] blind_spot/seed1: costs finite and positive
+ [PASS] blind_spot/seed1: calibration lowers ECE
+ [PASS] blind_spot/seed2: ROC val cost >= exact two-threshold optimum
+ [PASS] blind_spot/seed2: snapped ROC val cost >= best two-threshold on bins
+ [PASS] blind_spot/seed2: val cost per-bin <= two-threshold
+ [PASS] blind_spot/seed2: costs finite and positive
+ [PASS] blind_spot/seed2: calibration lowers ECE
+ [PASS] constant: |mean relative regret| < 2%
+ [PASS] blind_spot: mean relative regret > 3%
+ [PASS] blind_spot: per-bin policy is fragmented in every seed
+ [PASS] constant: ROC within 3% of exact two-threshold (constant-cost model is right)
+ [PASS] blind_spot: ROC costs > 10% more than exact two-threshold (constant-cost model is wrong)
+
+SMOKE TEST PASSED
+
+EXIT_CODE=0
+ELAPSED_SECONDS=3.413757085800171

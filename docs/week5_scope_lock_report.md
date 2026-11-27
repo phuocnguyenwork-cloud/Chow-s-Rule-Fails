@@ -1,3 +1,5 @@
+> Lưu trữ audit/thực nghiệm ngày 20/11 trên nền 8e87cc9. Không phải đánh giá main hiện tại; xem `week5_merge_20261127.md` cho trạng thái sau tích hợp fix của Phước.
+
 # TUẦN 5 (16/11–22/11/2026) — SCOPE LOCK
 
 **Đề tài G5-1:** *Chow's Rule Fails When the Abstention Is a Classifier*  

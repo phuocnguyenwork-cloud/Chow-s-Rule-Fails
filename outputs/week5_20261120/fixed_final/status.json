@@ -1,0 +1,12 @@
+[
+  {
+    "name": "logit",
+    "exit_code": 0,
+    "seconds": 114.57518529891968
+  },
+  {
+    "name": "fraud_quantile",
+    "exit_code": 0,
+    "seconds": 114.52861142158508
+  }
+]

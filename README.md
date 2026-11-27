@@ -13,7 +13,7 @@ Trên Credit Card Fraud (tầng 1 hồi quy logistic đã hiệu chuẩn, tầng
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 make smoke            # hoặc: python scripts/smoke_test.py
-make test             # 124 tests
+make test             # 127 tests
 ```
 
 Kết quả mong đợi: dòng cuối là `SMOKE TEST PASSED`, mã thoát 0, và file `outputs/smoke_results.json`.
@@ -65,7 +65,7 @@ Kiểm tra sau khi tải: 284.807 dòng, 492 gian lận. Script giữ mọi dòn
 ```
 src/threeaction/   costs, bins, calibrate, tier2, policies, roc_baseline, pipeline, synthetic
 scripts/           smoke_test.py (không cần mạng), run_creditcard.py (dữ liệu thật)
-tests/             test_core.py, test_roc.py (124 tests; unittest, chạy được với pytest)
+tests/             test_core.py, test_roc.py (127 tests; unittest, chạy được với pytest)
 data/  outputs/    dữ liệu thô và kết quả (không commit)
 ```
 
@@ -88,3 +88,9 @@ python scripts/run_creditcard.py --csv data/creditcard_openml_1597.csv --n-split
 ```
 
 Artifact mới chứa hash mã nguồn, CSV, archive và phiên bản môi trường. Các artifact cũ là exploratory; không trộn hai protocol. Báo cáo thực thi nằm trong `outputs/week5_20261120/BAO_CAO_TUAN_5.md`.
+
+## Đồng bộ main ngày 27/11/2026
+
+Nhánh đã tích hợp `ac262e9`: runner hiện hiệu chuẩn cả tầng 2 bằng Platt OOF-train và mặc định `--t2-mode bayes` như main. Giữ kiểm tra group split và provenance của test_chow. Không chạy thêm lưới c trong lần đồng bộ này.
+
+Kết quả `outputs/week5_20261120/fixed_final/` là bằng chứng lịch sử của protocol ngày 20/11 (tầng 2 chưa Platt, chọn ngưỡng empirical). Không dùng runner hiện tại để tuyên bố tái tạo nguyên trạng các số đó. Snapshot mã tương ứng: `outputs/week5_20261120/source_fixed.zip`. Các lệnh tuần 5 ở trên dùng split tuần 5 nhưng chạy protocol tầng 2 hiện tại. Kết quả sau merge lưu riêng tại `outputs/test_chow_merge_20261127/`.

@@ -13,3 +13,14 @@ data/*
 # kết quả sinh ra khi chạy
 outputs/*
 !outputs/.gitkeep
+!outputs/c_sensitivity_results.json
+!outputs/creditcard_results.json
+
+# Reviewed week-5 evidence: results/logs only, never raw CSV.
+!outputs/week5_20261120/
+outputs/week5_20261120/*
+!outputs/week5_20261120/fixed_final/
+!outputs/week5_20261120/source_fixed.zip
+!outputs/test_chow_merge_20261127/
+!data/splits_week5_grouped.npz
+!data/manifest_week5_grouped.json

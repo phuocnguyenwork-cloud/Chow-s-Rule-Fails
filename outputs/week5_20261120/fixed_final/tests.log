@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/home/gacute/miniconda3/bin/python",
+    "-m",
+    "pytest",
+    "tests",
+    "-q",
+    "-p",
+    "no:cacheprovider"
+  ],
+  "cwd": "/home/gacute/Documents/Project/DATH/Chow-s-Rule-Fails",
+  "source_hashes": "manifest.json",
+  "base_source_provenance": "../provenance.json"
+}
+........................................................................ [ 58%]
+....................................................                     [100%]
+124 passed in 20.20s
+
+EXIT_CODE=0
+ELAPSED_SECONDS=21.343328952789307

@@ -1,0 +1,82 @@
+{
+  "command": [
+    "/home/gacute/miniconda3/bin/python",
+    "-u",
+    "scripts/run_creditcard.py",
+    "--csv",
+    "/home/gacute/Documents/Project/DATH/Chow-s-Rule-Fails/data/creditcard_openml_1597.csv",
+    "--n-splits",
+    "20",
+    "--K",
+    "10",
+    "--method",
+    "fraud_quantile",
+    "--min-pos",
+    "5",
+    "--n-boot",
+    "500",
+    "--splits",
+    "/home/gacute/Documents/Project/DATH/Chow-s-Rule-Fails/data/splits_week5_grouped.npz",
+    "--out",
+    "/home/gacute/Documents/Codex/2026-11-20/ng-b-ng-ph-m-vi/outputs/week5/fixed_final/fraud_quantile.json"
+  ],
+  "cwd": "/home/gacute/Documents/Project/DATH/Chow-s-Rule-Fails",
+  "source_hashes": "manifest.json",
+  "base_source_provenance": "../provenance.json"
+}
+Loaded frozen splits from /home/gacute/Documents/Project/DATH/Chow-s-Rule-Fails/data/splits_week5_grouped.npz
+rows: 284807 -> 284807 with duplicate rows retained; frauds: 492 (0.173%)
+split  0: K_eff=10 t2=0.4088 test cost two=0.03301 bin=0.03301 regret=+0.00000 (+0.00%) ECE=0.00034
+          ROC: a+=33.30 a-=0.202 t=(0.00366, 0.0303) test cost=0.02866 | exact two-thr test cost=0.02864
+split  1: K_eff=10 t2=0.0743 test cost two=0.04746 bin=0.04746 regret=+0.00000 (+0.00%) ECE=0.00015
+          ROC: a+=27.81 a-=0.202 t=(0.00396, 0.0234) test cost=0.04738 | exact two-thr test cost=0.04761
+split  2: K_eff=10 t2=0.1178 test cost two=0.02855 bin=0.02855 regret=+0.00000 (+0.00%) ECE=0.00038
+          ROC: a+=29.97 a-=0.202 t=(0.00531, 0.0275) test cost=0.02959 | exact two-thr test cost=0.02950
+split  3: K_eff=10 t2=0.2539 test cost two=0.02659 bin=0.02659 regret=+0.00000 (+0.00%) ECE=0.00048
+          ROC: a+=30.81 a-=0.202 t=(0.00488, 0.0207) test cost=0.02528 | exact two-thr test cost=0.02131
+split  4: K_eff=10 t2=0.0037 test cost two=0.04524 bin=0.04524 regret=+0.00000 (+0.00%) ECE=0.00037
+          ROC: a+=35.79 a-=0.206 t=(0.00376, 0.0178) test cost=0.03768 | exact two-thr test cost=0.03768
+split  5: K_eff=10 t2=0.1684 test cost two=0.02864 bin=0.02864 regret=+0.00000 (+0.00%) ECE=0.00031
+          ROC: a+=28.48 a-=0.202 t=(0.00260, 0.0134) test cost=0.03459 | exact two-thr test cost=0.03387
+split  6: K_eff=10 t2=0.5631 test cost two=0.02738 bin=0.02738 regret=+0.00000 (+0.00%) ECE=0.00038
+          ROC: a+=35.35 a-=0.201 t=(0.01248, 0.0206) test cost=0.03017 | exact two-thr test cost=0.02242
+split  7: K_eff=10 t2=0.1658 test cost two=0.02497 bin=0.02497 regret=+0.00000 (+0.00%) ECE=0.00028
+          ROC: a+=29.69 a-=0.203 t=(0.00448, 0.0172) test cost=0.02660 | exact two-thr test cost=0.02425
+split  8: K_eff=10 t2=0.0047 test cost two=0.03169 bin=0.03169 regret=+0.00000 (+0.00%) ECE=0.00027
+          ROC: a+=33.31 a-=0.205 t=(0.00415, 0.0189) test cost=0.03436 | exact two-thr test cost=0.03436
+split  9: K_eff=10 t2=0.3972 test cost two=0.04275 bin=0.04275 regret=+0.00000 (+0.00%) ECE=0.00038
+          ROC: a+=26.24 a-=0.201 t=(0.00332, 0.0499) test cost=0.04656 | exact two-thr test cost=0.03976
+split 10: K_eff=10 t2=0.0490 test cost two=0.03853 bin=0.03846 regret=+0.00007 (+0.17%) ECE=0.00051
+          ROC: a+=27.72 a-=0.204 t=(0.00676, 0.0152) test cost=0.03543 | exact two-thr test cost=0.03819
+split 11: K_eff=10 t2=0.1809 test cost two=0.04544 bin=0.04713 regret=-0.00168 (-3.57%) ECE=0.00020
+          ROC: a+=39.45 a-=0.202 t=(0.00233, 0.0246) test cost=0.04172 | exact two-thr test cost=0.03742
+split 12: K_eff=10 t2=0.0697 test cost two=0.02526 bin=0.02526 regret=+0.00000 (+0.00%) ECE=0.00046
+          ROC: a+=31.51 a-=0.204 t=(0.00512, 0.0188) test cost=0.02829 | exact two-thr test cost=0.02786
+split 13: K_eff=10 t2=0.1362 test cost two=0.05200 bin=0.05200 regret=+0.00000 (+0.00%) ECE=0.00054
+          ROC: a+=37.40 a-=0.202 t=(0.00530, 0.0100) test cost=0.04366 | exact two-thr test cost=0.04580
+split 14: K_eff=10 t2=0.3117 test cost two=0.03828 bin=0.03828 regret=+0.00000 (+0.00%) ECE=0.00028
+          ROC: a+=24.78 a-=0.202 t=(0.00318, 0.0224) test cost=0.04119 | exact two-thr test cost=0.03861
+split 15: K_eff=10 t2=0.0287 test cost two=0.04025 bin=0.04025 regret=+0.00000 (+0.00%) ECE=0.00030
+          ROC: a+=27.90 a-=0.204 t=(0.00648, 0.0097) test cost=0.03707 | exact two-thr test cost=0.03644
+split 16: K_eff=10 t2=0.1654 test cost two=0.04857 bin=0.04857 regret=+0.00000 (+0.00%) ECE=0.00040
+          ROC: a+=32.19 a-=0.202 t=(0.00533, 0.0115) test cost=0.03245 | exact two-thr test cost=0.03727
+split 17: K_eff=10 t2=0.5153 test cost two=0.03320 bin=0.03320 regret=+0.00000 (+0.00%) ECE=0.00055
+          ROC: a+=40.54 a-=0.201 t=(0.00372, 0.0138) test cost=0.03202 | exact two-thr test cost=0.03144
+split 18: K_eff=10 t2=0.2772 test cost two=0.03421 bin=0.03421 regret=+0.00000 (+0.00%) ECE=0.00024
+          ROC: a+=35.77 a-=0.202 t=(0.00326, 0.0142) test cost=0.03437 | exact two-thr test cost=0.03296
+split 19: K_eff=10 t2=0.2947 test cost two=0.03248 bin=0.03248 regret=+0.00000 (+0.00%) ECE=0.00055
+          ROC: a+=38.17 a-=0.202 t=(0.00552, 0.0240) test cost=0.03090 | exact two-thr test cost=0.03066
+
+AGGREGATE over 20 split(s): {
+  "mean_cost_roc": 0.03489865394976765,
+  "mean_rel_regret_roc": -0.038774858154519,
+  "mean_cost_two": 0.0362255405664972,
+  "mean_cost_bin": 0.03630643064825044,
+  "mean_abs_regret": -8.089008175324319e-05,
+  "mean_rel_regret": -0.0022279822144163648,
+  "std_abs_regret_across_splits": 0.00036816514219241756
+}
+elapsed 110.5s
+
+EXIT_CODE=0
+ELAPSED_SECONDS=114.52856063842773

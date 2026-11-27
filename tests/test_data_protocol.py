@@ -44,9 +44,11 @@ def test_calibrator_uses_only_oof_training_rows(monkeypatch):
             seen.append((p.copy(),y.copy()));return super().fit(p,y)
     monkeypatch.setattr(mod,'PlattCalibrator',Spy)
     monkeypatch.setattr(mod,'run_policies',lambda *a,**k: {})
-    mod.one_split(X,y,0,10,'logit',5,5,archive)
+    mod.one_split(X,y,groups,0,10,'logit',5,5,archive)
     altered=y.copy();altered[va]=1-altered[va];altered[te]=1-altered[te]
-    mod.one_split(X,altered,0,10,'logit',5,5,archive)
-    assert np.array_equal(seen[0][1],y[tr])
-    np.testing.assert_array_equal(seen[0][0],seen[1][0])
-    np.testing.assert_array_equal(seen[0][1],seen[1][1])
+    mod.one_split(X,altered,groups,0,10,'logit',5,5,archive)
+    assert len(seen) == 4  # tier 1 and tier 2, before and after perturbation
+    for first, second in ((seen[0], seen[2]), (seen[1], seen[3])):
+        np.testing.assert_array_equal(first[1], y[tr])
+        np.testing.assert_array_equal(first[0], second[0])
+        np.testing.assert_array_equal(first[1], second[1])
