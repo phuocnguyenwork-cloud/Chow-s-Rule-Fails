@@ -288,7 +288,7 @@ def freeze_data(save_clean_csv=True):
             "pandas_version": pd.__version__,
         },
         "raw_file": {
-            "path": os.path.relpath(CSV_PATH, ROOT),
+            "path": os.path.relpath(CSV_PATH, ROOT).replace("\\", "/"),
             "size_bytes": raw_info["raw_size_bytes"],
             "sha256": raw_info["raw_sha256"],
             "rows": raw_info["n_raw"],
@@ -304,14 +304,14 @@ def freeze_data(save_clean_csv=True):
             "conflicting_label_groups": raw_info["conflicting_groups"],
         },
         "sensitivity_deduplicated": {
-            "path": os.path.relpath(CLEAN_CSV_PATH, ROOT) if save_clean_csv else None,
+            "path": os.path.relpath(CLEAN_CSV_PATH, ROOT).replace("\\", "/") if save_clean_csv else None,
             "sha256": clean_sha,
             "rows": n_clean,
             "frauds": frauds_clean,
             "note": "Sensitivity analysis only. Not used for split generation.",
         },
         "splits_archive": {
-            "path": os.path.relpath(SPLITS_PATH, ROOT),
+            "path": os.path.relpath(SPLITS_PATH, ROOT).replace("\\", "/"),
             "sha256": splits_sha256,
             "n_splits": 20,
             "split_basis": "raw rows (no deduplication); groups kept intact",

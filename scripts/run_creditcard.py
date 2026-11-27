@@ -36,8 +36,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
 from threeaction.calibrate import PlattCalibrator, ece, reliability_table   # noqa: E402
+from threeaction.costs import C_MISS, C_FALSE_BLOCK, C_ESCALATE              # noqa: E402
 from threeaction.pipeline import run_policies                                # noqa: E402
-from threeaction.tier2 import choose_t2                                      # noqa: E402
+from threeaction.tier2 import choose_t2, bayes_t2                            # noqa: E402
 
 ALL_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 29)]
 TIER1_FEATURES = [ "Amount"] + [f"V{i}" for i in range(1, 11)]  # placeholder
@@ -85,7 +86,8 @@ def get_group_cv_folds(groups_tr, y_tr, n_splits=5, seed=0):
     return folds
 
 
-def one_split(X, y, group_ids, seed, K, method, min_pos, n_boot, splits_archive=None):
+def one_split(X, y, group_ids, seed, K, method, min_pos, n_boot, splits_archive=None,
+              c_escalate=C_ESCALATE, t2_mode="bayes"):
     if splits_archive is not None and f"train_{seed}" in splits_archive:
         tr = splits_archive[f"train_{seed}"]
         va = splits_archive[f"val_{seed}"]
@@ -114,25 +116,47 @@ def one_split(X, y, group_ids, seed, K, method, min_pos, n_boot, splits_archive=
     s = cal.transform(p_raw_full)          # Platt applied to full-fit raw for val/test
     s[tr] = cal.transform(p_raw_oof_tr)   # train rows override with OOF-based score
 
-    # tier 2 and its fixed threshold t2 (out-of-fold on TRAIN, group-aware CV)
+    # tier 2: OOF predictions on TRAIN, group-aware CV
     gb = HistGradientBoostingClassifier(random_state=seed)
-    p2_oof = cross_val_predict(
+    p2_raw_oof_tr = cross_val_predict(
         gb,
         X.iloc[tr][ALL_FEATURES], y[tr],
         cv=cv_folds_tr,
         method="predict_proba",
     )[:, 1]
-    t2, _ = choose_t2(p2_oof, y[tr])
+
+    # Platt calibration for Tier 2 using train OOF predictions
+    cal2 = PlattCalibrator().fit(p2_raw_oof_tr, y[tr])
+    p2_oof_cal = cal2.transform(p2_raw_oof_tr)
+
+    # Fit final Tier 2 model on all train features
     gb.fit(X.iloc[tr][ALL_FEATURES], y[tr])
-    p2 = gb.predict_proba(X[ALL_FEATURES])[:, 1]
+    p2_raw_full = gb.predict_proba(X[ALL_FEATURES])[:, 1]
+    p2_full_cal = cal2.transform(p2_raw_full)
+
+    # Build tier-2 calibrated probabilities: train rows use OOF
+    p2 = p2_full_cal.copy()
+    p2[tr] = p2_oof_cal
+
+    # Threshold t2: Bayes theoretical (1/101) or empirical search
+    if t2_mode == "bayes":
+        t2 = bayes_t2(C_MISS, C_FALSE_BLOCK)
+    else:
+        t2, _ = choose_t2(p2[tr], y[tr])
+
     block2 = (p2 >= t2).astype(int)
-    block2[tr] = (p2_oof >= t2).astype(int)       # train rows use out-of-fold decisions
 
     parts = [{"s": s[i], "y": y[i], "tier2_block": block2[i]} for i in (tr, va, te)]
     res = run_policies(*parts, K=K, method=method, min_pos=min_pos,
-                       n_boot=n_boot, seed=seed)
-    res.update(t2=float(t2), ece_test=float(ece(s[te], y[te])),
-               reliability=reliability_table(s[te], y[te], 10))
+                       n_boot=n_boot, seed=seed, c_escalate=c_escalate)
+    res.update(
+        t2=float(t2),
+        t2_mode=t2_mode,
+        c_escalate=float(c_escalate),
+        ece_test=float(ece(s[te], y[te])),
+        ece_test_t2=float(ece(p2[te], y[te])),
+        reliability=reliability_table(s[te], y[te], 10),
+    )
     return res
 
 
@@ -144,6 +168,10 @@ def main():
     ap.add_argument("--method", default="logit", choices=["quantile", "logit", "fraud_quantile"])
     ap.add_argument("--min-pos", type=int, default=5)
     ap.add_argument("--n-boot", type=int, default=500)
+    ap.add_argument("--c-escalate", type=float, default=C_ESCALATE,
+                    help=f"Cost of escalation (default: {C_ESCALATE})")
+    ap.add_argument("--t2-mode", default="bayes", choices=["bayes", "empirical"],
+                    help="Tier 2 threshold selection: 'bayes' (fixed 1/101) or 'empirical' (default: bayes)")
     ap.add_argument("--dedupe", action="store_true",
                     help="Drop duplicates (for sensitivity analysis only; default: False)")
     ap.add_argument("--splits", default=os.path.join(ROOT, "data", "splits_20.npz"),
@@ -160,11 +188,13 @@ def main():
     rows = []
     t0 = time.time()
     for seed in range(a.n_splits):
-        r = one_split(X, y, group_ids, seed, a.K, a.method, a.min_pos, a.n_boot, splits_archive=splits_archive)
+        r = one_split(X, y, group_ids, seed, a.K, a.method, a.min_pos, a.n_boot,
+                      splits_archive=splits_archive, c_escalate=a.c_escalate, t2_mode=a.t2_mode)
         rg = r["test_regret"]
-        print(f"split {seed:2d}: K_eff={r['K_effective']:2d} t2={r['t2']:.4f} "
+        print(f"split {seed:2d}: K_eff={r['K_effective']:2d} t2={r['t2']:.4f} (mode={a.t2_mode}, c={a.c_escalate}) "
               f"test cost two={r['test_cost_two']:.5f} bin={r['test_cost_bin']:.5f} "
-              f"regret={rg['abs']:+.5f} ({100 * rg['rel']:+.2f}%) ECE={r['ece_test']:.5f}")
+              f"regret={rg['abs']:+.5f} ({100 * rg['rel']:+.2f}%) ECE(t1={r['ece_test']:.5f}, t2={r['ece_test_t2']:.5f}) "
+              f"esc_rate(two={100*r['escalate_rate_two']:.2f}%, exact={100*r['escalate_rate_exact']:.2f}%)")
         o, ex = r["roc"], r["exact_two_threshold"]
         print(f"          ROC: a+={o['a_plus']:.2f} a-={o['a_minus']:.3f} t=({o['t_low']:.5f},"
               f" {o['t_high']:.4f}) test cost={o['test_cost']:.5f} "
@@ -176,24 +206,61 @@ def main():
                      "roc_regret_vs_per_bin_rel": o["regret_vs_per_bin"]["rel"],
                      "exact_two_threshold_test_cost": ex["test_cost"],
                      "seed": seed, "K_eff": r["K_effective"], "t2": r["t2"],
+                     "t2_mode": a.t2_mode, "c_escalate": a.c_escalate,
                      "t_low": r["t_low"], "t_high": r["t_high"],
                      "test_cost_two": r["test_cost_two"], "test_cost_bin": r["test_cost_bin"],
+                     "escalate_rate_two": r["escalate_rate_two"],
+                     "escalate_rate_bin": r["escalate_rate_bin"],
+                     "escalate_rate_exact": r["escalate_rate_exact"],
+                     "escalate_rate_roc": r["escalate_rate_roc"],
                      "regret_abs": rg["abs"], "regret_rel": rg["rel"],
                      "regret_rel_ci": list(rg["rel_ci"]),
                      "per_bin_two_threshold_shape": r["per_bin_is_two_threshold_shape"],
-                     "ece_test": r["ece_test"]})
+                     "ece_test": r["ece_test"],
+                     "ece_test_t2": r["ece_test_t2"]})
     ct = np.mean([r["test_cost_two"] for r in rows]); cb = np.mean([r["test_cost_bin"] for r in rows])
     cr = np.mean([r["roc_test_cost"] for r in rows])
-    agg = {"mean_cost_roc": cr,
+    cx = np.mean([r["exact_two_threshold_test_cost"] for r in rows])
+    agg = {"c_escalate": a.c_escalate, "t2_mode": a.t2_mode,
+           "mean_cost_roc": cr,
+           "mean_cost_exact_two": cx,
            "mean_rel_regret_roc": (cr - cb) / cb if cb > 0 else None,
            "mean_cost_two": ct, "mean_cost_bin": cb, "mean_abs_regret": ct - cb,
            "mean_rel_regret": (ct - cb) / cb if cb > 0 else None,
+           "mean_escalate_rate_two": float(np.mean([r["escalate_rate_two"] for r in rows])),
+           "mean_escalate_rate_exact": float(np.mean([r["escalate_rate_exact"] for r in rows])),
+           "mean_escalate_rate_roc": float(np.mean([r["escalate_rate_roc"] for r in rows])),
            "std_abs_regret_across_splits": float(np.std([r["regret_abs"] for r in rows]))}
     print("\nAGGREGATE over", a.n_splits, "split(s):", json.dumps(agg, indent=2))
     print(f"elapsed {time.time() - t0:.1f}s")
+    import hashlib
+    import subprocess
+
+    def file_sha256(path):
+        if not path or not os.path.exists(path):
+            return None
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            while chunk := f.read(65536):
+                h.update(chunk)
+        return h.hexdigest()
+
+    try:
+        git_commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+        ).strip()
+    except Exception:
+        git_commit = "unknown"
+
+    provenance = {
+        "git_commit": git_commit,
+        "csv_sha256": file_sha256(a.csv),
+        "splits_sha256": file_sha256(a.splits),
+        "date": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
     with open(a.out, "w") as f:
-        json.dump({"args": vars(a), "splits": rows, "aggregate": agg}, f, indent=2)
+        json.dump({"provenance": provenance, "args": vars(a), "splits": rows, "aggregate": agg}, f, indent=2)
 
 
 if __name__ == "__main__":

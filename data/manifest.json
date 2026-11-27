@@ -14,7 +14,7 @@
     "pandas_version": "3.1.0"
   },
   "raw_file": {
-    "path": "data\\creditcard.csv",
+    "path": "data/creditcard.csv",
     "size_bytes": 148854550,
     "sha256": "2f2ca793ed45d753b75896d72dd6c187c8520ea0127c438106d55f0238da47a8",
     "rows": 284807,
@@ -67,7 +67,7 @@
     "note": "Sensitivity analysis only. Not used for split generation."
   },
   "splits_archive": {
-    "path": "data\\splits_20.npz",
+    "path": "data/splits_20.npz",
     "sha256": "48152ae8e2649a79912c935272df64de362640a03c2bf16f67c3fd040413a2b8",
     "n_splits": 20,
     "split_basis": "raw rows (no deduplication); groups kept intact",
